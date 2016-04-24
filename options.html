@@ -1,0 +1,70 @@
+<html>
+<head><title>JSON to CSV Options</title>
+<style>
+	label{display:block;}
+	body{max-width:1100px;font-family:sans-serif;}
+	h3{margin:4px;}
+	#req_win, #req_mac{display:none;}
+	.rounded{
+		border:2px solid #AAA;
+		text-decoration:none;
+		padding:6px;margin:3px;
+		-moz-border-radius: 8px;
+		border-radius: 8px;
+		background-color:#9A9A9A;
+		text-shadow:black 1px 1px 3px;
+		color:white;
+		box-shadow:black 2px 2px 2px;
+	}
+	.rounded:hover{
+		text-shadow:black 1px 1px 2px;
+		box-shadow:black 1px 1px 2px;
+	}
+	.registered{color:#080;font-weight:bold;}
+	.unregistered{color:#F00;font-weight:bold;}
+	#history{position:relative;}
+	#cotd{display:none;}
+	#shoadvanc{display:none;}
+</style>
+<script src="opt_prefs.js"></script>
+<script src="options.js"></script>
+</head>
+<body>
+
+<div style="float:right;width:500px;">
+	
+
+		<br style="clear:both;" /><hr/>
+<div id="dupli" style=""><a href="#help" id="shohelp">Expand Help Info</a><div id="allhelp" style="display:none;">
+	<a name="help">&nbsp;</a>
+	
+	visit a JSON file or endpoint that ends in <b>.json</b> or has <b>.json</b>?before=the&query=string.
+
+	<br/><br/>Additional help and tutorials coming soon
+
+</div>
+</div>
+
+
+</div><div style="position:relative;width:399px">
+	<h3><img src="images/icon32.png" align="bottom"/> JSON to CSV
+
+<div id="options">
+	
+</div>
+
+
+<a href="#" id="shoadvanc">Advanced Options</a><div id="adv_options" style="display:none;">
+	<!-- advanced -->
+</div>
+
+<button id="bsave">Save</button> <button id="defa">Show Defaults</button>
+
+<br><br>
+<span id="status"></span> &nbsp; 
+
+</div>
+
+
+</body>
+</html>
