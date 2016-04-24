@@ -10,7 +10,7 @@ function parseCsv(csvData){
     resultLine = parseRow(lines[l]);
     resultLines.push(resultLine);
     if( resultLine.length > maxCols ){
-      maxCols = resultLine.length
+      maxCols = resultLine.length;
     }
   }
   return {
@@ -30,7 +30,7 @@ function equalizeResultRowLength(resultLines, maxCols){
       }
     }
   }
-  return resultLines
+  return resultLines;
 }
 
 function parseRow(csvRow){
