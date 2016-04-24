@@ -13,31 +13,23 @@ function getEventTargetA(ev){
 
 // Saves options to localStorage.
 function save_options() {
-//  var select = document.getElementById("color");
-//  var color = select.children[select.selectedIndex].value;
-//  localStorage["favorite_color"] = color;
-		
-		for( i in pOptions){
-			if(typeof(pOptions[i].def)=='boolean')
-				localStorage[i] = document.getElementById(i).checked;
-			else
-				localStorage[i] = document.getElementById(i).value;
-		}
-	
-	
+	for( i in pOptions){
+		if(typeof(pOptions[i].def)=='boolean')
+			localStorage[i] = document.getElementById(i).checked;
+		else
+			localStorage[i] = document.getElementById(i).value;
+	}
+
 	for( i in pAdvOptions){
 			if(typeof(pAdvOptions[i].def)=='boolean')
 				localStorage[i] = document.getElementById(i).checked;
 			else
 				localStorage[i] = document.getElementById(i).value;
-		}
-	//localStorage["hqthumbs"] = document.getElementById("hqthumbs").checked;
-	//localStorage["showCurrentTab"] = document.getElementById("showCurrentTab").checked;
-	//localStorage["maxhistory"] = document.getElementById("maxhistory").value;
-	
+	}
+
 	var iconbitmap=false;
 	var appleIcon=false;
-	
+
 	if(typeof(localStorage["iconIsBitmap"])!='undefined')iconbitmap = ((localStorage["iconIsBitmap"]=='true')?true:false);
 	if(typeof(localStorage["appleIcon"])!='undefined')appleIcon = ((localStorage["appleIcon"]=='true')?true:false);
 	if(!iconbitmap){
@@ -52,7 +44,7 @@ function save_options() {
 	setTimeout(function() {
 		status.innerHTML = "";
 	}, 750);
-	
+
 	chrome.runtime.sendMessage({greeting: "reloadprefs"}, function(response) { });
 }
 
@@ -93,19 +85,6 @@ function restore_options() {
 		else
 			document.getElementById(i).value = ((localStorage[i])?localStorage[i]:pAdvOptions[i].def);
 	}
-
-//  var favorite = localStorage["favorite_color"];
-//  if (!favorite) {
-//    return;
-//  }
-//  var select = document.getElementById("color");
-//  for (var i = 0; i < select.children.length; i++) {
-//    var child = select.children[i];
-//    if (child.value == favorite) {
-//      child.selected = "true";
-//      break;
-//    }
-//  }
 }
 
 var histReSize=false;
@@ -196,21 +175,10 @@ function createOptions(piOptions, elemAppend){
 }
 
 function init(){
-
-//	var a=document.getElementById('dupli');
-//	var b=a.cloneNode(true);
-//	b.id='nota';
-//	b.style.color='black';
-//	b.style.position='absolute';
-//	b.style.top='1px';b.style.left='1px';
-//	a.appendChild(b);
-	
 	createOptions(pOptions, document.getElementById('options'));
 	createOptions(pAdvOptions, document.getElementById('adv_options'))
 	restore_options();
-	
-	
-	
+
 	if(document.getElementById('plat_prev')){
 		if(navigator.userAgent.indexOf('Windows') < 0){
 			document.getElementById('plat_prev').src="osx.png";

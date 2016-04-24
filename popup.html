@@ -7,19 +7,28 @@
 			font-size:12px;
 			margin:0px 4px 0px 4px;
 			padding:0px;
+			min-width:800px;
+			min-height:600px;
 			-webkit-user-select:none;
 		}
 		#vs{
 			font-weight:bold;font-size:1.1em;color:#AAA;
 		}
+
+		.row{white-space: nowrap;}
+		.cell{display:inline-block;border:2px solid #999;width:150px;min-height:24px;max-height:24px;height:24px;vertical-align: top;position:relative;}
+		.cell input{border:none;padding:5px;padding-left:15px;width:100%;}
+		.alignRight{text-align: right;}
 	</style>
   <script src="Cr_min.js"></script>
   <script src="opt_prefs.js"></script>
   <script src="csv_from_json.js"></script>
+  <script src="Xcellify.js"></script>
+  <script src="XcellifyCsv.js"></script>
   <script src="popup.js"></script>
   <title>JSON to CSV</title>
 </head>
 <body>
-	<div id="vs">JSON to CSV taking a long time loading, or not available on this page.  Sorry!</div>
+	<div id="preview"></div>
 </body>
 </html>

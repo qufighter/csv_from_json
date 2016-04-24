@@ -44,12 +44,12 @@ function doParseObjectMode1(obj, prefix){
 	}else if( Array.isArray(obj) && obj.length ){
 
 		for( var i=0,l=obj.length; i<l; i++ ){
-			result=result.concat( doParseObjectMode1(obj[i], push(clone(prefix), i)));
+			result=result.concat( doParseObjectMode1(obj[i], push(clone(prefix), '['+i+']')));
 		}
 	}else if( Object.keys(obj).length ){
 
 		for( var k in obj ){
-			result=result.concat( doParseObjectMode1(obj[k], push(clone(prefix), k)));
+			result=result.concat( doParseObjectMode1(obj[k], push(clone(prefix), k+':'))); // indicating which entries are keys may make results more readable... these cols could be right aligned
 		}
 	}else{
 		result.push(clone(prefix));
@@ -69,7 +69,7 @@ function doParseObjectMode2(result, obj, prefix, headers){
 		console.log('found array @"'+prefix+'"', obj)
 
 		for( i=0,l=obj.length; i<l; i++ ){
-			doParseObjectMode2(result, obj[i], prefix+i+concatinator);
+			doParseObjectMode2(result, obj[i], prefix+'['+i+']'+concatinator);
 		}
 	}else if( Object.keys(obj).length ){
 		console.log('found object @"'+prefix+'"', obj)
@@ -81,7 +81,7 @@ function doParseObjectMode2(result, obj, prefix, headers){
 
 		for( k in obj ){
 			if( typeof obj[k] != 'object' ){
-				vPrefix.push(cellContent(k));
+				vPrefix.push(cellContent(k+':')); // indicating which entries are keys may make results more readable... these cols could be right aligned
 				vPrefix.push(cellContent(obj[k]));
 				hPrefix.push(cellContent(k));
 				hPrefix.push(cellContent(k));
@@ -98,7 +98,7 @@ function doParseObjectMode2(result, obj, prefix, headers){
 			var extraHprefix = '';
 			if( typeof obj[k] == 'object' ){
 				console.log('its', k);
-				extraPrefix = cellContent(k) + concatinator;
+				extraPrefix = cellContent(k+':') + concatinator;  // indicating which entries are keys may make results more readable... these cols could be right aligned
 				extraHprefix = 'unknown' + concatinator;
 				//hPrefix.push('unkn');
 			}
