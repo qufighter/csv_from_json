@@ -62,17 +62,17 @@ function doParseObjectMode2(result, obj, prefix, headers){
 	var k, vPrefix = [], hPrefix = [], i, l;
 
 	if( typeof obj != 'object' ){
-		console.log('found stringy @"'+prefix+'"', obj)
+		//console.log('found stringy @"'+prefix+'"', obj)
 
 		result.result+=prefix+cellContent(obj)+"\n";
 	}else if( Array.isArray(obj) && obj.length ){
-		console.log('found array @"'+prefix+'"', obj)
+		//console.log('found array @"'+prefix+'"', obj)
 
 		for( i=0,l=obj.length; i<l; i++ ){
 			doParseObjectMode2(result, obj[i], prefix+'['+i+']'+concatinator);
 		}
 	}else if( Object.keys(obj).length ){
-		console.log('found object @"'+prefix+'"', obj)
+		//console.log('found object @"'+prefix+'"', obj)
 
 		// row prefix becomes all our values
 		// header "prefix" becomes all our keys
@@ -97,7 +97,6 @@ function doParseObjectMode2(result, obj, prefix, headers){
 			var extraPrefix = '';
 			var extraHprefix = '';
 			if( typeof obj[k] == 'object' ){
-				console.log('its', k);
 				extraPrefix = cellContent(k+':') + concatinator;  // indicating which entries are keys may make results more readable... these cols could be right aligned
 				extraHprefix = 'unknown' + concatinator;
 				//hPrefix.push('unkn');
@@ -106,7 +105,7 @@ function doParseObjectMode2(result, obj, prefix, headers){
 		}
 
 	}else{
-		console.log('found nothing! @"'+prefix+'"', obj)
+		//console.log('found nothing! @"'+prefix+'"', obj)
 
 		result.result+=prefix+"\n";
 	}
