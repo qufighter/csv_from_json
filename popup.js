@@ -46,10 +46,10 @@ function gotJsonDoc(name, doc){
 
 function previewCsvData(csvData){
 	var conatinerElm = Cr.elm('div',{id:'preview'});
-	if( localStorage["plainTextPreview"]=='true' ){
-		preview_plain(conatinerElm, csvData);
-	}else{
+	if( localStorage["spreadsheetView"]=='true' ){
 		preview_spreadsheet(conatinerElm, csvData);
+	}else{
+		preview_plain(conatinerElm, csvData);
 	}
 }
 
@@ -96,6 +96,8 @@ function preview_spreadsheet(conatinerElm, csvData){
 	}
 
 	document.getElementById('content').appendChild(conatinerElm);
+
+	if(localStorage['xcellify'] != 'true') return;
 
 	xcellController = new Xcellify({
 		containerElm: conatinerElm, 		// scope event listening and processing to a specific context, you can think <table>

@@ -1,8 +1,10 @@
 var pOptions=[];
 var pAdvOptions=[];
 
-pOptions["simpleExport"]={def:false,ind:0,name:'Simpler Export'};
-pOptions["plainTextPreview"]={def:true,ind:0,name:'Plain Text Preview (loads faster)'};
+pOptions["simpleExport"]={def:false,ind:0,name:'Simpler Export (Less filterable)'};
+pOptions["spreadsheetView"]={def:false,ind:0,name:'Sheet Grid Preview'};
+pOptions["xcellify"]={def:false,ind:1,name:'Xcellify Preview'};
+
 
 function setOptionDefaults(){
 	for( i in pOptions){
