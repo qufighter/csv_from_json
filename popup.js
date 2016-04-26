@@ -45,9 +45,12 @@ function gotJsonDoc(name, doc){
 }
 
 function previewCsvData(csvData){
-	var conatinerElm = _gel('preview');
-	preview_spreadsheet(conatinerElm, csvData);
-	//preview_plain(conatinerElm, csvData);
+	var conatinerElm = Cr.elm('div',{id:'preview'});
+	if( localStorage["plainTextPreview"]=='true' ){
+		preview_plain(conatinerElm, csvData);
+	}else{
+		preview_spreadsheet(conatinerElm, csvData);
+	}
 }
 
 function preview_spreadsheet(conatinerElm, csvData){
@@ -92,6 +95,8 @@ function preview_spreadsheet(conatinerElm, csvData){
 		}
 	}
 
+	document.getElementById('content').appendChild(conatinerElm);
+
 	xcellController = new Xcellify({
 		containerElm: conatinerElm, 		// scope event listening and processing to a specific context, you can think <table>
 		// selectors must be valid in querySelectorAll, just add a unique class to cells and rows to identify them
@@ -107,6 +112,7 @@ function preview_plain(conatinerElm, csvData){
 	Cr.elm('pre',{},[
 		Cr.txt(csvData)
 	], conatinerElm );
+	document.getElementById('content').appendChild(conatinerElm);
 }
 
 function visitOptions(){
