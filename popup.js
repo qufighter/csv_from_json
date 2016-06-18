@@ -1,5 +1,8 @@
 var tabid=0,winid=0,jsonloaded=false;
 var xcellController;
+var docJsObj = null;
+var docJsName = '';
+
 function _gel(g){
 	return document.getElementById(g);
 }
@@ -19,29 +22,78 @@ function makeSaveButton(saveBtn, fileName, data){
 	saveBtn.href = URL.createObjectURL(data);
 }
 
+function parseJsArea(ev){
+	var jsScript = _gel('transform').value;
+	var docPartial = false;
+	var messageArea = _gel('messages');
+	Cr.empty(messageArea);
+	try{
+		docPartial = eval(jsScript);
+	}catch(e){
+		Cr.elm('div',{},[Cr.txt(e.message)],messageArea);
+		docPartial = false;
+	}
+
+	if( docPartial.getIterator && docPartial.toArray && docPartial.toObject ){
+		docPartial = docPartial.toArray();
+		Cr.elm('div',{},[Cr.txt("Lazy.js evaluation must end with .toArray() or .toObject() - toArray() assumed")],messageArea);
+	}
+
+	if( docPartial ) previewJsonDoc(docPartial);
+	else{
+		Cr.elm('div',{},[Cr.txt("Expression evaluated to: "+docPartial)],messageArea);
+	}
+}
+
 function gotJsonDoc(name, doc){
 	jsonloaded=true;
 	//document.body.innerHTML = doc;
-	var docJsObj = JSON.parse(doc);
+	docJsObj = JSON.parse(doc);
+	window.json = docJsObj;
+	docJsName = name;
 
+	_gel('transform').value="json";
+	_gel('go').addEventListener('click', parseJsArea);
+
+	previewJsonDoc(docJsObj);
+}
+
+function previewJsonDoc(previewDocJsObj){
 	var csvData = '';
 	if( localStorage["simpleExport"]=='true' ){
-		Cr.elm('span',{},[Cr.txt(' Simplified CSV, see ')],document.body);
-		csvData = CSVfromJSON.getJsonMode2(docJsObj);
+		csvData = CSVfromJSON.getJsonMode2(previewDocJsObj);
 	}else{
-		csvData = CSVfromJSON.getJsonMode1(docJsObj);
+		csvData = CSVfromJSON.getJsonMode1(previewDocJsObj);
 	}
 
+	removeNode(_gel('save'));
+	removeNode(_gel('save2'));
+
 	var saveBtn=Cr.elm('a',{style:'cursor:pointer;',id:'save'},[Cr.txt('Download')]);
-	makeSaveButton(saveBtn, name+'.csv', csvData);
+	makeSaveButton(saveBtn, docJsName+'.csv', csvData);
 	Cr.insertNodes(saveBtn, document.body, document.body.firstChild);
 
 	var save2 = saveBtn.cloneNode(true);
+	save2.id = 'save2';
 	Cr.insertNodes(save2, document.body, document.body.lastChild);
 
-	Cr.elm('a',{href:'#',event:['click',visitOptions]},[ Cr.txt('Options') ], document.body);
+	createOptionsLinksOnce();
 
 	previewCsvData(csvData);
+}
+
+var createOptionsLinksOnce = function(){
+	if( localStorage["simpleExport"]=='true' ){
+		Cr.elm('span',{},[Cr.txt(' Simplified CSV, see ')],document.body);
+	}
+	Cr.elm('a',{href:'#',event:['click',visitOptions]},[ Cr.txt('Options') ], document.body);
+	createOptionsLinksOnce = function(){};
+}
+
+function removeNode(node){
+	if( node && node.parentNode ){
+		node.parentNode.removeChild(node);
+	}
 }
 
 function previewCsvData(csvData){
@@ -95,7 +147,9 @@ function preview_spreadsheet(conatinerElm, csvData){
 		}
 	}
 
-	document.getElementById('content').appendChild(conatinerElm);
+	var content = _gel('content');
+	Cr.empty(content);
+	content.appendChild(conatinerElm);
 
 	if(localStorage['xcellify'] != 'true') return;
 
@@ -114,7 +168,9 @@ function preview_plain(conatinerElm, csvData){
 	Cr.elm('pre',{},[
 		Cr.txt(csvData)
 	], conatinerElm );
-	document.getElementById('content').appendChild(conatinerElm);
+	var content = _gel('content');
+	Cr.empty(content);
+	content.appendChild(conatinerElm);
 }
 
 function visitOptions(){
