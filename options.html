@@ -42,6 +42,19 @@
 
 	<br/><br/>Additional help and tutorials coming soon
 
+	<br/><br/>Lazy JS example - an array of objects each with a property headers, where we omit two, and return the whole array
+	<pre>
+Lazy(json)
+.map(function(item){
+  return Lazy(item.headers)
+  .omit(['myops','myop2'])
+  .toObject()
+ })
+.toArray()
+	</pre>
+
+	Only the last evaluation run will be saved, so keep a copy of useful ones!
+
 </div>
 </div>
 

@@ -24,6 +24,7 @@ function makeSaveButton(saveBtn, fileName, data){
 
 function parseJsArea(ev){
 	var jsScript = _gel('transform').value;
+	localStorage["lastScript"] = jsScript;
 	var docPartial = false;
 	var messageArea = _gel('messages');
 	Cr.empty(messageArea);
@@ -32,6 +33,18 @@ function parseJsArea(ev){
 	}catch(e){
 		Cr.elm('div',{},[Cr.txt(e.message)],messageArea);
 		docPartial = false;
+	}
+
+	var lazyCount = jsScript.match(/Lazy\(/g);
+	lazyCount = lazyCount ? lazyCount.length : 0;
+	var toArrCnt = jsScript.match(/\.toArray\(\)/g);
+	toArrCnt = toArrCnt ? toArrCnt.length : 0;
+	var toObjectCnt = jsScript.match(/\.toObject\(\)/g);
+	toObjectCnt = toObjectCnt ? toObjectCnt.length : 0;
+
+	if( lazyCount > 1 && lazyCount > toArrCnt + toObjectCnt ){
+		docPartial = false;
+		Cr.elm('div',{},[Cr.txt("Each Lazy() created must lead to one .toArray() or .toObject()")],messageArea);
 	}
 
 	if( docPartial.getIterator && docPartial.toArray && docPartial.toObject ){
@@ -81,6 +94,10 @@ function previewJsonDoc(previewDocJsObj){
 
 
 	previewCsvData(csvData);
+
+	if( localStorage["lastScript"] ){
+		_gel('transform').value = localStorage["lastScript"];
+	}
 }
 
 var createOptionsLinksOnce = function(){
