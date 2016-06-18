@@ -46,6 +46,8 @@ function parseJsArea(ev){
 }
 
 function gotJsonDoc(name, doc){
+	createOptionsLinksOnce();
+
 	jsonloaded=true;
 	//document.body.innerHTML = doc;
 	docJsObj = JSON.parse(doc);
@@ -75,9 +77,8 @@ function previewJsonDoc(previewDocJsObj){
 
 	var save2 = saveBtn.cloneNode(true);
 	save2.id = 'save2';
-	Cr.insertNodes(save2, document.body, document.body.lastChild);
+	Cr.insertNodes(save2, document.body, _gel('content').nextSibling);
 
-	createOptionsLinksOnce();
 
 	previewCsvData(csvData);
 }
