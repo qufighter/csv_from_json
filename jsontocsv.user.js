@@ -24,7 +24,7 @@ function checkForJSON(){
 		var isntJson = path == '/' || path.match(/\.chtml$|\.html$|\.htm|\.xml$|\.css$/i)
 		if( !isntJson ){
 			var firstChar = document.body.innerText.charAt(0);
-			if( firstChar == '{' || firstChar == '[' ){
+			if( firstChar == '{' || firstChar == '[' || window.json ){
 				fetchProbablyJsonDocument();
 			}else{
 				//console.log('JSON to CSV failed to detect this document as being JSON');
