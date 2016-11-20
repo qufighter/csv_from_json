@@ -39,7 +39,7 @@ function checkForJSON(){
 			if( firstChar == '{' || firstChar == '[' || window.json ){
 				fetchProbablyJsonDocument();
 			}else{
-				console.log('JSON to CSV failed to detect this document as being JSON: ', firstChar);
+				//console.log('JSON to CSV failed to detect this document as being JSON: ', firstChar);
 			}
 		}else{
 			//console.log('JSON to CSV failed to detect this document as being JSON');
