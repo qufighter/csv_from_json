@@ -1,10 +1,13 @@
 var pOptions=[];
 var pAdvOptions=[];
 
+pOptions["autoParse"]={def:true,ind:0,name:'Auto Run (May be slow for large documents)'};
 pOptions["simpleExport"]={def:false,ind:0,name:'Simpler Export (Less filterable)'};
 pOptions["spreadsheetView"]={def:false,ind:0,name:'Sheet Grid Preview'};
 pOptions["xcellify"]={def:false,ind:1,name:'Xcellify Preview'};
-
+pOptions["lazyJsEnabled"]={def:true,ind:0,name:'Enable Lazy.js Evaluators'};
+pOptions["lodashJsEnabled"]={def:true,ind:0,name:'Enable Lodash (underscore) Evaluators'};
+pOptions["lodashFullJsEnabled"]={def:false,ind:1,name:'Use Lodash 4.17.2 full build'};
 
 function setOptionDefaults(){
 	for( i in pOptions){

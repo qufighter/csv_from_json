@@ -23,7 +23,11 @@ function makeSaveButton(saveBtn, fileName, data){
 }
 
 function parseJsArea(ev){
+	removeNotice();
 	var jsScript = _gel('transform').value;
+	jsScript = jsScript.replace(/^\s+|\s+$/g, '');
+	if( !jsScript ) jsScript = 'json';
+	_gel('transform').value = jsScript;
 	localStorage["lastScript"] = jsScript;
 	var docPartial = false;
 	var messageArea = _gel('messages');
@@ -60,6 +64,7 @@ function parseJsArea(ev){
 
 function gotJsonDoc(name, doc){
 	createOptionsLinksOnce();
+	removeNotice();
 
 	jsonloaded=true;
 	//document.body.innerHTML = doc;
@@ -70,7 +75,12 @@ function gotJsonDoc(name, doc){
 	_gel('transform').value="json";
 	_gel('go').addEventListener('click', parseJsArea);
 
-	previewJsonDoc(docJsObj);
+	if( localStorage["autoParse"]=='true' ) previewJsonDoc(docJsObj);
+	else showNotice("press Evaluate to continue...");
+
+	if( localStorage["lastScript"] ){
+		_gel('transform').value = localStorage["lastScript"];
+	}
 }
 
 function previewJsonDoc(previewDocJsObj){
@@ -92,12 +102,7 @@ function previewJsonDoc(previewDocJsObj){
 	save2.id = 'save2';
 	Cr.insertNodes(save2, document.body, _gel('content').nextSibling);
 
-
 	previewCsvData(csvData);
-
-	if( localStorage["lastScript"] ){
-		_gel('transform').value = localStorage["lastScript"];
-	}
 }
 
 var createOptionsLinksOnce = function(){
@@ -201,21 +206,48 @@ function begiin(){
 		chrome.tabs.getSelected(winid, function(tab){
 			tabid=tab.id;
 			chrome.tabs.sendMessage(tabid,{getJsonDoc:true},function(r){
-				if( r.name ){
+				if( r && r.name ){
 					gotJsonDoc(r.name, r.doc);
 				}else{
-					console.log('seems to not be a JSON document!');
+					console.log('seems to not be a JSON document! Or its taking too long to load...');
 				}
 			});
 		});
 	});
+	if( localStorage['lazyJsEnabled'] == 'true' ){attachScript("lazy.js");}
+	if( localStorage['lodashJsEnabled'] == 'true' ){
+		if( localStorage['lodashFullJsEnabled'] == 'true' ){
+			attachScript("lodash_full.js");
+		}else{
+			attachScript("lodash.js");
+		}
+	}
+}
+
+chrome.runtime.onMessage.addListener(function(r, sender, sendResponse) {
+	if(r.doc && r.name){
+		gotJsonDoc(r.name, r.doc);
+	}
+});
+
+function attachScript(s){
+	Cr.elm('script',{type:'text/javascript',language:'javascript',src:s},[],document.head);
+}
+
+function removeNotice(){
+	var errorDiv = _gel('vs');
+	if( errorDiv ) removeNode(errorDiv);
+}
+
+function showNotice(m){
+	Cr.elm('div',{id:'vs'},[Cr.txt(m)],document.body)
 }
 
 document.addEventListener('DOMContentLoaded', function () {
 	begiin();
 	setTimeout(function(){
 		if(!jsonloaded){
-			Cr.elm('div',{id:'vs'},[Cr.txt("JSON to CSV taking a long time loading, or not available on this page.  Sorry!")],document.body)
+			showNotice("JSON to CSV taking a long time loading, or not available on this page. You may need to refresh the page. Sorry!");
 		}
 	},2500)
 });
