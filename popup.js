@@ -303,7 +303,7 @@ var popoutMode=false;
 document.addEventListener('DOMContentLoaded', function () {
 
 	if(window.location.hash){
-		winid = window.location.hash.replace('#','')-0;
+		winid = window.location.hash.replace('#','')-0;  // todo pass tab ID too - then persists reload
 		popoutMode=true;
 		begiin();
 	}else{
