@@ -7,6 +7,27 @@ function _gel(g){
 	return document.getElementById(g);
 }
 
+function popupimage(mylink, windowname)
+{
+	var w=Math.round(window.outerWidth*1.114),h=Math.round(window.outerHeight*1.15);
+	chrome.windows.create({url:mylink.href,width:w,height:h,focused:false,type:"panel"},function(win){});
+	return false;
+}
+
+function popOut(){
+	popupimage({href:chrome.extension.getURL('popup.html')+'#'+winid},"JSON to CSV : Chrome Extension");
+	ev.preventDefault();
+}
+
+function revealTab(ev){
+	chrome.tabs.update(tabid,{active:true});
+	chrome.windows.update(winid,{focused:true}); // drawAttention:true
+	chrome.windows.getCurrent({}, function(window){
+		chrome.windows.update(window.id,{focused:true});
+	});
+	ev.preventDefault();
+}
+
 function dataToFile(data, type, saveFileName){
 	var binary = atob(data);
 	var array = [];
@@ -63,7 +84,7 @@ function parseJsArea(ev){
 }
 
 function gotJsonDoc(name, doc){
-	createOptionsLinksOnce();
+
 	removeNotice();
 
 	jsonloaded=true;
@@ -83,12 +104,27 @@ function gotJsonDoc(name, doc){
 	}
 }
 
+function dupeAtTop(btn){
+	var save2 = btn.cloneNode(true);
+	save2.id = save2.id + '2';
+	Cr.insertNodes(save2, document.body, document.body.firstChild);
+}
+
 function previewJsonDoc(previewDocJsObj){
-	var csvData = '';
+	var csvData = {}, parsedData = null;
 	if( localStorage["simpleExport"]=='true' ){
-		csvData = CSVfromJSON.getJsonMode2(previewDocJsObj);
+		if( localStorage["flatListExport"]=='true' ){
+			csvData = CSVfromJSON.getFlatList(previewDocJsObj);
+		}else{
+			csvData = CSVfromJSON.getJsonMode2(previewDocJsObj);
+		}
 	}else{
 		csvData = CSVfromJSON.getJsonMode1(previewDocJsObj);
+	}
+
+	if( csvData.csv ){
+		parsedData = csvData.result;
+		csvData = csvData.csv;
 	}
 
 	removeNode(_gel('save'));
@@ -96,20 +132,28 @@ function previewJsonDoc(previewDocJsObj){
 
 	var saveBtn=Cr.elm('a',{style:'cursor:pointer;',id:'save'},[Cr.txt('Download')]);
 	makeSaveButton(saveBtn, docJsName+'.csv', csvData);
-	Cr.insertNodes(saveBtn, document.body, document.body.firstChild);
+	Cr.insertNodes(saveBtn, document.body, _gel('content').nextSibling);
 
-	var save2 = saveBtn.cloneNode(true);
-	save2.id = 'save2';
-	Cr.insertNodes(save2, document.body, _gel('content').nextSibling);
+	
 
-	previewCsvData(csvData);
+	dupeAtTop(saveBtn);
+
+	previewCsvData(csvData, parsedData);
 }
 
 var createOptionsLinksOnce = function(){
-	if( localStorage["simpleExport"]=='true' ){
-		Cr.elm('span',{},[Cr.txt(' Simplified CSV, see ')],document.body);
+	// if( localStorage["simpleExport"]=='true' ){
+	// 	Cr.elm('span',{},[Cr.txt(' Simplified CSV, see ')],document.body);
+	// }
+	Cr.insertNodes(Cr.elm('a',{href:'#',event:['click',visitOptions]},[ Cr.txt('Options') ]), document.body, document.body.firstChild);
+
+
+	if(!popoutMode){
+		Cr.elm('input',{title:'Seperate window',type:'button',class:'pop rfloat',value:'Popout',events:['click',popOut]},[],document.body)
+	}else{
+		Cr.elm('a',{events:['click',revealTab],class:'rfloat link',href:'#'},[Cr.txt('Reveal Tab')], document.body)
 	}
-	Cr.elm('a',{href:'#',event:['click',visitOptions]},[ Cr.txt('Options') ], document.body);
+
 	createOptionsLinksOnce = function(){};
 }
 
@@ -119,21 +163,21 @@ function removeNode(node){
 	}
 }
 
-function previewCsvData(csvData){
+function previewCsvData(csvData, parsedData){
 	var conatinerElm = Cr.elm('div',{id:'preview'});
 	if( localStorage["spreadsheetView"]=='true' ){
-		preview_spreadsheet(conatinerElm, csvData);
+		preview_spreadsheet(conatinerElm, csvData, parsedData);
 	}else{
 		preview_plain(conatinerElm, csvData);
 	}
 }
 
-function preview_spreadsheet(conatinerElm, csvData){
+function preview_spreadsheet(conatinerElm, csvData, parsedData){
 
-	var parsedCsv = parseCsv(csvData);
-
-	var cols = parsedCsv.maxCols;
-	var rows = parsedCsv.maxRows;
+	var parsedCsv = parsedData ? parsedData : parseCsv(csvData);
+	var cols = parsedCsv.maxCols; // csvData[0].length
+	var rows = parsedCsv.maxRows; // csvData.length
+	var tableData = parsedCsv.rows;
 	var c, r, rowElm;
 
 	rowElm = Cr.elm('div',{class:"headingrow row xcellrow"},[],conatinerElm);
@@ -143,8 +187,8 @@ function preview_spreadsheet(conatinerElm, csvData){
 	// ],rowElm);
 
 	// for( c=0; c<cols; c++ ){
-	// 	Cr.elm('div',{class:"cell cellheading xcellheading", 'data-col':c, event:['click', selectColumn], 'data-col-search':parsedCsv.rows[0][c]},[
-	// 		Cr.elm('div',{},[Cr.txt(parsedCsv.rows[0][c])])
+	// 	Cr.elm('div',{class:"cell cellheading xcellheading", 'data-col':c, event:['click', selectColumn], 'data-col-search':tableData[0][c]},[
+	// 		Cr.elm('div',{},[Cr.txt(tableData[0][c])])
 	// 	],rowElm);
 	// }
 
@@ -157,16 +201,16 @@ function preview_spreadsheet(conatinerElm, csvData){
 
 		for( c=0; c<cols; c++ ){
 			var style='';
-			var value = parsedCsv.rows[r][c];
+			var value = tableData[r][c];
 			var cellElements=[
 				Cr.elm('input',{class:'xcellinput',type:'text', value: value})
 			];
 
-			if( value.charAt(value.length-1) == ':' ){
+			if( value.charAt && value.charAt(value.length-1) == ':' ){
 				cellElements[0].classList.add('alignRight')
 			}
 
-			Cr.elm('div',{class:"cell xcellcell", style:style, 'data-col-search':parsedCsv.rows[r][c]},cellElements,rowElm);
+			Cr.elm('div',{class:"cell xcellcell", style:style, 'data-col-search':tableData[r][c]},cellElements,rowElm);
 		}
 	}
 
@@ -200,20 +244,30 @@ function visitOptions(){
   window.open(chrome.extension.getURL("options.html"));
 }
 
-function begiin(){
-	chrome.windows.getCurrent(function(window){
-		winid=window.id;
-		chrome.tabs.getSelected(winid, function(tab){
-			tabid=tab.id;
-			chrome.tabs.sendMessage(tabid,{getJsonDoc:true},function(r){
-				if( r && r.name ){
-					gotJsonDoc(r.name, r.doc);
-				}else{
-					console.log('seems to not be a JSON document! Or its taking too long to load...');
-				}
-			});
+function begiinWithWindow(){
+	chrome.tabs.getSelected(winid, function(tab){
+		tabid=tab.id;
+		chrome.tabs.sendMessage(tabid,{getJsonDoc:true},function(r){
+			if( r && r.name ){
+				gotJsonDoc(r.name, r.doc);
+			}else{
+				console.log('seems to not be a JSON document! Or its taking too long to load...');
+			}
 		});
 	});
+}
+
+function begiin(){
+
+	if( !popoutMode ){
+		chrome.windows.getCurrent(function(window){
+			winid=window.id;
+			begiinWithWindow();
+		});
+	}else{
+		begiinWithWindow();
+	}
+
 	if( localStorage['lazyJsEnabled'] == 'true' ){attachScript("lazy.js");}
 	if( localStorage['lodashJsEnabled'] == 'true' ){
 		if( localStorage['lodashFullJsEnabled'] == 'true' ){
@@ -222,6 +276,8 @@ function begiin(){
 			attachScript("lodash.js");
 		}
 	}
+
+	createOptionsLinksOnce();
 }
 
 chrome.runtime.onMessage.addListener(function(r, sender, sendResponse) {
@@ -243,8 +299,17 @@ function showNotice(m){
 	Cr.elm('div',{id:'vs'},[Cr.txt(m)],document.body)
 }
 
+var popoutMode=false;
 document.addEventListener('DOMContentLoaded', function () {
-	begiin();
+
+	if(window.location.hash){
+		winid = window.location.hash.replace('#','')-0;
+		popoutMode=true;
+		begiin();
+	}else{
+		begiin();
+	}
+
 	setTimeout(function(){
 		if(!jsonloaded){
 			showNotice("JSON to CSV taking a long time loading, or not available on this page. You may need to refresh the page. Sorry!");

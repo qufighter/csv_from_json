@@ -58,6 +58,41 @@ function doParseObjectMode1(obj, prefix){
 	return result;
 }
 
+
+function getFlatListings(obj){
+	var result = [];
+	var headers = [];
+
+	if( typeof obj != 'object' ){
+		console.error("ERROR - not flat list of objects");
+		if( typeof(showNotice) == 'function' ){
+			showNotice("JSON to CSV error - result is not flat list (disable flat list mode)!");
+		}
+	}else if( Array.isArray(obj) && obj.length ){
+		for( var i=0,l=obj.length; i<l; i++ ){
+			var row = [];
+			headers = [];
+			if( typeof(obj[i]) == 'object' ){
+				for( var key in obj[i] ){
+					headers.push(key);
+					row.push(obj[i][key])
+
+				}
+				result.push(row);
+			}
+		}
+	}else{
+		console.error("ERROR2 - not flat list of objects");
+		if( typeof(showNotice) == 'function' ){
+			showNotice("JSON to CSV error - result is not flat list (disable flat list mode)!");
+		}
+	}
+
+	result = ([headers]).concat(result);
+
+	return result;
+}
+
 function doParseObjectMode2(result, obj, prefix, headers){
 	var k, vPrefix = [], hPrefix = [], i, l;
 
@@ -113,11 +148,25 @@ function doParseObjectMode2(result, obj, prefix, headers){
 	return result;
 }
 
+function formatAsParsedCsv(r){
+	return {
+		maxCols:r[0].length,
+		maxRows:r.length,
+		rows: r
+	}
+}
+
 var CSVfromJSON = {
 	getJsonMode1: function(obj){
 		return doParseObjectMode2({result:'', headers:''}, obj, '', '').result;
 	},
-	getJsonMode2: function(obj){
-		return arrToCsv(doParseObjectMode1(obj, []));
+	getJsonMode2: function(obj){ // simpleExport
+		var r = doParseObjectMode1(obj, []);
+		//return {csv:arrToCsv(r), result:formatAsParsedCsv(r)};
+		return arrToCsv(r);
+	},
+	getFlatList: function(obj){
+		var r = getFlatListings(obj);
+		return {csv:arrToCsv(r), result:formatAsParsedCsv(r)};
 	}
 };
