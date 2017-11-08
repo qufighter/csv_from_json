@@ -93,14 +93,16 @@ function gotJsonDoc(name, doc){
 	window.json = docJsObj;
 	docJsName = name;
 
-	_gel('transform').value="json";
-	_gel('go').addEventListener('click', parseJsArea);
+	var currentValue=_gel('transform').value;
+	if( !currentValue ) _gel('transform').value="json";
 
 	if( localStorage["autoParse"]=='true' ) previewJsonDoc(docJsObj);
 	else showNotice("press Evaluate to continue...");
 
 	if( localStorage["lastScript"] ){
-		_gel('transform').value = localStorage["lastScript"];
+		if( !currentValue || prompt("Conundrum, clear current script replacing value in storage?\n\nStored Value:\n\n"+localStorage["lastScript"]+"\n\nIf you press OK you will save the above and loose what is below.\n\nCurrently Edited Script (copy if you need it):", currentValue)){
+			_gel('transform').value = localStorage["lastScript"];
+		}
 	}
 }
 
@@ -146,7 +148,6 @@ var createOptionsLinksOnce = function(){
 	// 	Cr.elm('span',{},[Cr.txt(' Simplified CSV, see ')],document.body);
 	// }
 	Cr.insertNodes(Cr.elm('a',{href:'#',event:['click',visitOptions]},[ Cr.txt('Options') ]), document.body, document.body.firstChild);
-
 
 	if(!popoutMode){
 		Cr.elm('input',{title:'Seperate window',type:'button',class:'pop rfloat',value:'Popout',events:['click',popOut]},[],document.body)
@@ -206,7 +207,7 @@ function preview_spreadsheet(conatinerElm, csvData, parsedData){
 				Cr.elm('input',{class:'xcellinput',type:'text', value: value})
 			];
 
-			if( value.charAt && value.charAt(value.length-1) == ':' ){
+			if( value && value.charAt && value.charAt(value.length-1) == ':' ){
 				cellElements[0].classList.add('alignRight')
 			}
 
@@ -278,6 +279,7 @@ function begiin(){
 	}
 
 	createOptionsLinksOnce();
+	_gel('go').addEventListener('click', parseJsArea);
 }
 
 chrome.runtime.onMessage.addListener(function(r, sender, sendResponse) {

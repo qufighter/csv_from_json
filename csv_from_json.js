@@ -64,9 +64,9 @@ function getFlatListings(obj){
 	var headers = [];
 
 	if( typeof obj != 'object' ){
-		console.error("ERROR - not flat list of objects");
+		console.error("ERROR - not flat list of objects (nor list of arrays)");
 		if( typeof(showNotice) == 'function' ){
-			showNotice("JSON to CSV error - result is not flat list (disable flat list mode)!");
+			showNotice("JSON to CSV error - result is not flat list of objects (disable flat list mode)!");
 		}
 	}else if( Array.isArray(obj) && obj.length ){
 		for( var i=0,l=obj.length; i<l; i++ ){
@@ -79,12 +79,18 @@ function getFlatListings(obj){
 
 				}
 				result.push(row);
+			}else{
+				if( !headers[0] ){
+					headers.push("A list of objects...");
+				}
+				row.push(obj[i])
+				result.push(row);
 			}
 		}
 	}else{
-		console.error("ERROR2 - not flat list of objects");
+		console.error("ERROR2 - not flat list of objects (nor list of arrays)");
 		if( typeof(showNotice) == 'function' ){
-			showNotice("JSON to CSV error - result is not flat list (disable flat list mode)!");
+			showNotice("JSON to CSV error - result is not flat list of objects (disable flat list mode)!");
 		}
 	}
 

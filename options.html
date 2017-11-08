@@ -51,9 +51,18 @@ Lazy(json)
 .toArray()
 	</pre>
 
-	Only the last evaluation run will be saved, so keep a copy of useful ones!
+	<br/><br/>Only the last evaluation run will be saved, so keep a copy of useful ones!
 
+	<br/><br/>The basics:
 
+	<br/><br/>The CSV document will be availale in the variable `<span style="font-family:monospace">json</span>` which you may reference in the evaluation window.
+
+	<br/><br/>If you don't have a JSON document you can try entering an array.
+
+	<br/><br/>JSON Document Detection:
+
+	<br/><br/>If you are viewing a JSON document and it won't load try restarting chrome.  if it still won't work examine the characteristics of the document and file a bug report.
+	If your document won't detect as being JSON you may review the full detection rules around here in <a href="https://github.com/qufighter/csv_from_json/blob/master/jsontocsv.user.js#L36-L39">checkForJSON()</a>.  The motivation for this implementation is to avoid checking the document innerText unless we can guess that it is necessary, due to the absence of some evidence otherwise.  There may be much room for improvement here but the current implementation attempts to maximize compatibility.
 
 </div>
 
