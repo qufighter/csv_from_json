@@ -64,6 +64,10 @@ Lazy(json)
 	<br/><br/>If you are viewing a JSON document and it won't load try restarting chrome.  if it still won't work examine the characteristics of the document and file a bug report.
 	If your document won't detect as being JSON you may review the full detection rules around here in <a href="https://github.com/qufighter/csv_from_json/blob/master/jsontocsv.user.js#L36-L39">checkForJSON()</a>.  The motivation for this implementation is to avoid checking the document innerText unless we can guess that it is necessary, due to the absence of some evidence otherwise.  There may be much room for improvement here but the current implementation attempts to maximize compatibility.
 
+	<br/><br/>Local Files:
+
+	<br/><br/>One day this may go without saying, but if you wish to use this extension on local file:/// url(s) you must explicitly grant this extension permission to do so from the Extensions screen.  This difficulty is a completely understandable security measure.
+
 </div>
 
 <br/><br/><b>Documentation</b><br/>
