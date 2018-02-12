@@ -1,5 +1,14 @@
-var concatinator=",";
-var lineSeperator = "\n";
+
+var csv_xfy = new Xcellify({
+	containerElm: document.createElement('div'),
+	tabReplacement: false,
+	delimitCells:','
+});
+
+
+var concatinator = csv_xfy.delimitCells;
+var lineSeperator = csv_xfy.delimitRows;
+
 
 function joinedPrefix(vPrefix){
 	if( vPrefix.length ){
@@ -9,9 +18,7 @@ function joinedPrefix(vPrefix){
 }
 
 function cellContent(c){
-	c = ''+c;
-	if( c.indexOf(',') > -1 ) return '"'+c+'"';
-	return c;
+	return csv_xfy.quoteValueIfNeeded(""+c);
 }
 
 function arrToCsv(arr){

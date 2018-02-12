@@ -17,11 +17,15 @@ var Xcellify = function(startupOptions){
   this.headingClassName = '';
   this.headingQuerySelector = 'AUTO';
   this.buttonBar = null;
+  this.safeMode = false; // errors? try safe mode!
   this.skipInvisibleCells = true;
   this.singleCellEditingMode = false;
   this.delimitCells = "\t";
   this.delimitRows = "\n";
+  this.tabReplacement = "     "; // when moving data outside of this editor, tab (aka this.delimitCells) support may need to be dropped (i.e replace tabs with spaces....), set to false to disable this "feature"
   this.hasFocus = 0;
+  this.quoteRex=null; //auto-computed
+  this.cellDelimitRex=null;
 
   this.resetState = function(){
     this.tableCellContainers = [];
@@ -41,10 +45,12 @@ var Xcellify = function(startupOptions){
 
   this.resetState();
 
+  var empty_permanent=Object.freeze({});
   var c,cl, r,rl, row, cell, cells, evcell, x,y,xl,yl; // private counter vars
 
   this.init = function(startupOptions){ // to be called once per page load for a given container element that will remain on the page
     this.autoProps(startupOptions);
+    this.setSafeMode();
     this.setupButtonBar();
     this.rebuildIndex();
     this.attachListeners(); // attaches event listeners to both the document and container element
@@ -52,6 +58,7 @@ var Xcellify = function(startupOptions){
     this.historyUtils.applyStateFn = this.applyHistoryState.bind(this);
     this.historyUtils.storeStateFn = this.storeStateInHistory.bind(this);
     this.clipboardUtils.copyAreaSelector = this.copyAreaSelector;
+    this.updateQuoteRex();
   };
 
   this.destroy = function(){ // not needed as long as container element stays the same and remains in the DOM, in which case you may call rebuildIndex if the table changes
@@ -141,20 +148,27 @@ var Xcellify = function(startupOptions){
     this.getGrid(); // if grid size changed we may need to zap history states we have since they might apply no longer
     this.setupHeadings();
 
+    var tableCellContainersY = null;
+    var tableCellsY = null;
+
     for( r=0, y=0, rl=this.fullGrid.length; r<rl; r++ ){
-      this.tableCellContainers[y] = [], this.tableCells[y] = [];
+      tableCellContainersY = [], tableCellsY = [];
       row = this.fullGrid[r].length ? (this.findMatchingParent(this.fullGrid[r][0], this.rowSelector)) : null;
       if( this.skipInvisibleCells && (!row || !this.elementIsVisible(row)) ) continue;
       cells = this.fullGrid[r];
       for( c=0, x=0, cl=cells.length; c<cl; c++ ){
         cell = cells[c];
         if( this.skipInvisibleCells && !this.elementIsVisible(cell) ) continue;
-        this.tableCellContainers[y][x] = this.findMatchingParent(cell, this.cellSelector) || cell;
-        this.tableCells[y][x] = cell;
+        //tableCellContainersY[x] = this.findMatchingParent(cell, this.cellSelector) || cell;
+        tableCellContainersY.push(this.findMatchingParent(cell, this.cellSelector) || cell);
+        //tableCellsY[x] = cell;
+        tableCellsY.push(cell);
         cell.setAttribute('data-xcelify-col', x++);
         cell.setAttribute('data-xcelify-row', y);
       }
-      if( this.tableCellContainers[y].length ){
+      if( tableCellContainersY.length ){
+        this.tableCellContainers.push(tableCellContainersY);
+        this.tableCells.push(tableCellsY);
         y++;
       }
     }
@@ -186,7 +200,7 @@ var Xcellify = function(startupOptions){
     cap = cap || false;
     element.addEventListener(evName, fn, cap);
     this._attachedListeners.push([element, evName, fn, cap]);
-  }
+  };
 
   this.detachListeners = function(){
     for( var l=0,li,ln=this._attachedListeners.length; l<ln; l++ ){
@@ -208,7 +222,7 @@ var Xcellify = function(startupOptions){
 
   this.keyboardDnEvents = function(ev){
     if( !this.hasFocus || !this.elementIsVisible(this.containerElm) || this.totalDimensions.x < 0 || this.totalDimensions.y < 0 ) return;
-    if( ev.metaKey ){ // command/control
+    if( ev.metaKey || ev.ctrlKey ){ // command/control
       switch(ev.keyCode){
         case 67: // C key - Copy
           this.captureCellCopy(ev);
@@ -264,7 +278,7 @@ var Xcellify = function(startupOptions){
   this.triggerSelectAll = function(){
     var selSize = this.selectionSize();
     if( selSize.total == 1 ){
-      this.activeCell.select();
+      this.selectCell(this.activeCell);
       this.singleCellEditingMode = false;
       this.clipboardUtils.hideArea();
     }
@@ -284,14 +298,14 @@ var Xcellify = function(startupOptions){
         }
       }
       this.activeCell = this.tableCells[this.activeCellIndex.y][this.activeCellIndex.x];
-      this.activeCell.select();
+      this.selectCell(this.activeCell);
 
     }else{
       // if selections size is zero, move down one cell
       if( this.tableCells[this.activeCellIndex.y+1] ){
         this.activeCell = this.tableCells[this.activeCellIndex.y+1][this.activeCellIndex.x];
         this.activeCellIndex.y += 1;
-        this.activeCell.select();
+        this.selectCell(this.activeCell);
       }
     }
     if( !this.isDragging ) this.storeStateInHistory(); // in case we made a change and pressed return
@@ -310,8 +324,12 @@ var Xcellify = function(startupOptions){
     };
   };
 
+  this.selectCell = function(c){
+    if(c && typeof(c.select) == 'function') c.select();
+  };
+
   this.mouseDownContainer = function(ev){
-    if( ev.target == this.containerElm || ev.target.matches(this.rowSelector) ) return;
+    if( ev.target == this.containerElm || ev.target.matches(this.rowSelector) ) return; // TODO: any element between rowSelector and containerElm should also return
     var evcell = this.findAppropriateEventTarget(ev);
     if( !evcell ){
       this.hideCurrentSelection();
@@ -327,9 +345,9 @@ var Xcellify = function(startupOptions){
 
     if( this.hasClass(evcell, this.cellInputClassName) && evcell != ev.target ){ // clicked on the cell (borders), found the input, stop selecting
       setTimeout(function(){
-        evcell.select();
+        this.selectCell(evcell);
         this.singleCellEditingMode = false;
-      }, 10);
+      }.bind(this), 10);
     }
 
     this.dragOrigin = this.cellPosition(evcell);
@@ -354,7 +372,7 @@ var Xcellify = function(startupOptions){
       if( selSize.total == 1 ){
         var cursorSelSize = this.activeSelectionSize();
         if( !cursorSelSize ){
-          ev.target.select();
+          this.selectCell(ev.target);
         }else{
           this.singleCellEditingMode = true;
         }
@@ -372,13 +390,21 @@ var Xcellify = function(startupOptions){
     }
   };
 
+  this.selectionDelayMs=33;
+  this.selectionDelay=null;
+  this.deferredCellSelection = function(currentPosition){
+    clearTimeout(this.selectionDelay);
+    this.selectionDelay = setTimeout(function(){
+      this.selectBoxedCells(this.dragOrigin, currentPosition);
+    }.bind(this),this.selectionDelayMs);
+  };
+
   this.mouseMovedProcessor = function(evcell){
     if( !evcell ) return;
     var currentPosition;
     if( !this.hasClass(evcell, this.cellInputClassName) ){
       if( this.hasClass(evcell, this.headingClassName) ){
-        currentPosition = this.cellPosition(evcell);
-        this.selectBoxedCells(this.dragOrigin, currentPosition);
+        this.deferredCellSelection(this.cellPosition(evcell));
       }
       return; // in case user is still dragging, do not cancel until the mouse returns
     }else{
@@ -392,7 +418,7 @@ var Xcellify = function(startupOptions){
             singleCellEditingMode=true; // allow return to single editing mode on accidental multi box select
           }
         }
-        this.boxCells(this.dragOrigin, currentPosition); // if single editing this is superfluous
+        this.deferredCellSelection(currentPosition); // if single editing this is superfluous
       }
     }
   };
@@ -556,15 +582,46 @@ var Xcellify = function(startupOptions){
     }
   };
 
+  this.getTableCellXY = function(x,y){
+    return this.tableCells[y][x];
+  };
+
+  this.getCellValueForCopy = function(x,y){
+    var v=this.getTableCellXY(x,y).value;
+    return this.quoteValueIfNeeded(v);
+  };
+
+  this.quoteValueIfNeeded = function(v){ // make sure this.updateQuoteRex was called if needed....
+    return this.needsQuoting(v) ? this.quoteValue(v) : v;
+  };
+
+  this.quoteValue = function(v){
+    if( this.tabReplacement ){
+      v = v.replace(this.cellDelimitRex, this.tabReplacement);
+    }
+    v = '"'+v.replace(/"/g,'""')+'"';
+    return v;
+  };
+
+  this.needsQuoting = function(v){
+    return v && v.match(this.quoteRex);
+  };
+
+  this.updateQuoteRex = function(){
+    this.cellDelimitRex = new RegExp(this.delimitCells,'g');
+    this.quoteRex = new RegExp(this.delimitCells+'|'+this.delimitRows+'|"');
+  };
+
   this.getCurrentSelectionForCopy = function(){
+      this.updateQuoteRex();
       var start = this.selectionStart,
           end   = this.selectionEnd,
           clipb = '';
       for( y=start.y, yl=end.y+1; y<yl; y++ ){
         for( x=start.x, xl=end.x; x<xl; x++ ){
-          clipb += this.tableCells[y][x].value+this.delimitCells;
+          clipb += this.getCellValueForCopy(x,y)+this.delimitCells;
         }
-        clipb += this.tableCells[y][x].value+this.delimitRows; // last element in row gets \n instead of \t
+        clipb += this.getCellValueForCopy(x,y)+this.delimitRows; // last element in row gets \n instead of \t
       }
       return clipb;
   };
@@ -572,6 +629,16 @@ var Xcellify = function(startupOptions){
   this.activeSelectionSize = function(){
     if( this.activeCell ) return this.activeCell.selectionEnd - this.activeCell.selectionStart;
     return 0;
+  };
+
+  this.activeCellValue = function(){
+    if( this.activeCell ) return this.activeCell.value;
+    return "";
+  };
+
+  this.getActiveCellSelectionValue = function(){
+    if( this.activeCell ) return this.activeCellValue().slice(this.activeCell.selectionStart, this.activeCell.selectionEnd);
+    return "";
   };
 
   this.captureCellCopy = function(ev){
@@ -590,9 +657,15 @@ var Xcellify = function(startupOptions){
   this.prepareClipboardOverlay = function(ev){
     var selSize = this.selectionSize();
     var cursorSelSize = this.activeSelectionSize();
-    if( selSize.total != 1 || !cursorSelSize ){
-      // if we have more than one cell selected or if the current selection within the cell is empty, show copy area
+    if( selSize.total != 1 || !cursorSelSize || cursorSelSize == this.activeCellValue().length ){
+      // if we have more than one cell selected or if the current selection within the cell is empty, or complete, show copy area to capture entire cell as one unified entity...
       this.clipboardUtils.showArea(this.getCurrentSelectionForCopy());
+    }else if( selSize.total == 1 ){
+      var selValue = this.getActiveCellSelectionValue();
+      this.updateQuoteRex();
+      if( this.needsQuoting(selValue) ){
+        this.clipboardUtils.showArea(this.quoteValue(selValue));
+      }
     }
   };
 
@@ -605,6 +678,7 @@ var Xcellify = function(startupOptions){
   };
 
   this.assembleIndexedPaste = function(activeCell, v){ // designed to be over-ridden
+    v = this.valueForPastedCellData(v);
     var val = activeCell.value;
     var selPos = activeCell.selectionStart + v.length;
     var newValue = val.slice(0, activeCell.selectionStart) + v + val.slice(activeCell.selectionEnd, val.length);
@@ -612,14 +686,70 @@ var Xcellify = function(startupOptions){
     activeCell.setSelectionRange(selPos, selPos); // reset cursor position
   };
 
+  this.valueForPastedCellData = function(d){
+    if( d.charAt(0) == '"' ){
+      return d.substr(1,d.length-2).replace(/""/g,'"');
+    }else{
+      return d;
+    }
+  };
+
+  this.parsePasteData = function(ad){
+    if( ad.length && ad.charAt(ad.length-1) != this.delimitRows ){
+      ad += this.delimitRows; // it should end with one \n followed by nothing
+    }
+    var d, ld;
+    var lineStart=0;
+    var inQuotes = false;
+    var isQuote = false;
+    var isNewline = false;
+    var resultRows = [];
+    var resultCols = [];
+    var lastSliceEndedAt = 0;
+    for( var z=0,dl=ad.length+1; z<dl; z++ ){
+      d = ad.charAt(z); // could be over the end of string too
+      isQuote = ld == '"';
+      if( d == '"' && isQuote ){
+        // even if d is a \n or \t we will get to it soon enough....
+        inQuotes = !inQuotes;
+      }else{
+        if( inQuotes ){
+          if( isQuote ){
+            inQuotes = !inQuotes;
+          }
+        }else{
+          if( ld == this.delimitCells || (isNewline = (ld == this.delimitRows)) ){
+            resultCols.push( this.valueForPastedCellData(ad.slice(lastSliceEndedAt, z-1)) );
+            lastSliceEndedAt = z;
+            if( isNewline ){
+              resultRows.push(resultCols);
+              resultCols=[];
+              isNewline = false;
+            }
+          }else if( isQuote ){
+            inQuotes = !inQuotes;
+          }
+        }
+      }
+      ld = d;
+    }
+    if( resultCols.length > 0 ){
+      resultRows.push(resultCols);
+    }
+    if( resultRows.length < 1 ){
+      resultRows.push([this.valueForPastedCellData(ad)]);
+    }
+    return resultRows;
+  };
+
   this.valuesPasted = function(v){
     var pasted = [];
-    var rows = this.delimitRows ? v.split(this.delimitRows) : [v]; // it should end with one \n followed by nothing
+    var rows = this.parsePasteData(v);
     var rowCount = 0;
     for( r=0, x=1, rl=rows.length; r<rl; r++,x++ ){
       if( rows[r].length < 1 && x == rl ) continue; // this was to capture last row...
-      pasted[r] = [];
-      cells = this.delimitCells? rows[r].split(this.delimitCells) : [rows[r]];
+      pasted[r] = []; // we do not use rowCount here - likely with great intention of representing what was copied
+      cells = rows[r];
       for( c=0, cl=cells.length; c<cl; c++ ){
         pasted[r][c] = cells[c];
       }
@@ -696,22 +826,27 @@ var Xcellify = function(startupOptions){
   this.setValueMultiCell = function(start, end, value){
     for( y=start.y,yl=end.y+1; y<yl; y++ ){
       for( x=start.x,xl=end.x+1; x<xl; x++ ){
-        this.tableCells[y][x].value = value;
+        this.getTableCellXY(x,y).value = value;
       }
     }
     this.storeStateInHistory();
   };
 
+
   this.styleCells = function(start, end, backgroundStyle){
-    for( y=start.y,yl=end.y+1; y<yl; y++ ){
+    y=start.y, yl=end.y+1;
+    if( !this.tableCells[y] ) return;
+    for( ; y<yl; y++ ){
       for( x=start.x,xl=end.x+1; x<xl; x++ ){
-        this.tableCells[y][x].style.background = backgroundStyle;
+        this.getTableCellXY(x,y).style.background = backgroundStyle;
       }
     }
   };
 
   this.styleEdges = function(start, end, borderStyle){
-    for( x=start.x, xl=end.x, y=start.y, yl=end.y; y<=yl; y++ ){
+    x=start.x, xl=end.x, y=start.y, yl=end.y;
+    if( !this.tableCellContainers[y] ) return;
+    for( ; y<=yl; y++ ){
       this.drawBorder(this.tableCellContainers[y][x], 'left', borderStyle);
       this.drawBorder(this.tableCellContainers[y][xl], 'right', borderStyle);
     }
@@ -723,6 +858,61 @@ var Xcellify = function(startupOptions){
 
   this.drawBorder = function(cell, side, borderStyle){
     cell.style['border-'+side] = borderStyle;
+  };
+
+  this.setSafeMode = function(){
+    if( !this.safeMode ) return;
+    // really if rebuildIndex works this should not be needed
+    // safe mode performs extra checks when styling cells
+    // for really small tables - who cares
+    // for really big tables - disable safe mode and keep the index good!
+
+    this.getTableCellXY = function(x,y){
+      var row = this.tableCells[y] || empty_permanent;
+      return row[x] || empty_permanent;
+    };
+
+    this.styleCells = function(start, end, backgroundStyle){
+      // this is completely optional and is still safe without override, should be faster than default function and getTableCellXY
+      y=start.y, yl=end.y+1;
+      var tc, ic;
+      if( !this.tableCells[y]) return;
+      if(  yl > this.tableCells.length ) yl = this.tableCells.length;
+      for( ; y<yl; y++ ){
+        tc = this.tableCells[y];
+        xl=end.x+1;
+        if( xl > tc.length ) xl = tc.length;
+        for( x=start.x; x<xl; x++ ){
+          ic = tc[x];
+          ic.style.background = backgroundStyle;
+        }
+      }
+    };
+
+    this.styleEdges = function(start, end, borderStyle){
+      x=start.x, xl=end.x, y=start.y, yl=end.y;
+      var tc, tc2;
+      if( !this.tableCellContainers[y] ) return;
+      for( ; y<=yl; y++ ){
+        tc = this.tableCellContainers[y];
+        if( !tc ) break;
+        this.drawBorder(tc[x], 'left', borderStyle);
+        this.drawBorder(tc[xl], 'right', borderStyle);
+      }
+      y = start.y;
+      tc = this.tableCellContainers[y] || empty_permanent;
+      tc2 = this.tableCellContainers[yl] || empty_permanent;
+      for( ; x<=xl; x++ ){
+        this.drawBorder(tc[x], 'top', borderStyle);
+        this.drawBorder(tc2[x], 'bottom', borderStyle);
+      }
+    };
+
+    this.drawBorder = function(cell, side, borderStyle){
+      if( cell ) cell.style['border-'+side] = borderStyle;
+    };
+
+    console.log('xcellify safemode enabled');
   };
 
   this.validateStartCoord = function(c){

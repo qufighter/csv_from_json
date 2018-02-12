@@ -144,6 +144,7 @@ function createOptions(piOptions, elemAppend){
 			if(piOptions[i].ind>1)l.appendChild(document.createTextNode('\u00a0\u00a0\u00a0\u00a0'));
 			l.appendChild(cb);
 			l.appendChild(document.createTextNode(piOptions[i].name));
+			if(piOptions[i].alt) l.setAttribute('title', piOptions[i].alt);
 			if(piOptions[i].img){
 				var t=piOptions[i].img;
 				i=document.createElement('image');
