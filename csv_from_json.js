@@ -1,36 +1,20 @@
-
-var csv_xfy = new Xcellify({
-	containerElm: document.createElement('div'),
-	tabReplacement: false,
-	delimitCells:','
-});
-
-
+var csv_xfy = XcellifyCsv.instance;
 var concatinator = csv_xfy.delimitCells;
 var lineSeperator = csv_xfy.delimitRows;
-
-
-function joinedPrefix(vPrefix){
-	if( vPrefix.length ){
-		return vPrefix.join(concatinator)+concatinator
-	}
-	return '';
-}
 
 function cellContent(c){
 	return csv_xfy.quoteValueIfNeeded(""+c);
 }
 
 function arrToCsv(arr){
-	var csv='',escaped=null;
-	for(var r=0,rl=arr.length; r<rl; r++){
-		escaped = [];
-		for(var c=0,cl=arr[r].length; c<cl; c++){
-			escaped.push(cellContent(arr[r][c]));
-		}
-		csv += escaped.join(concatinator)+lineSeperator;
+	return XcellifyCsv.create(arr);
+}
+
+function joinedPrefix(vPrefix){
+	if( vPrefix.length ){
+		return vPrefix.join(concatinator)+concatinator
 	}
-	return csv;
+	return '';
 }
 
 function clone(arr){

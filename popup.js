@@ -174,7 +174,7 @@ function previewCsvData(csvData, parsedData){
 }
 
 function preview_spreadsheet(conatinerElm, csvData, parsedData){
-	var parsedCsv = parsedData ? parsedData : parseCsvWithXcellify(csvData);
+	var parsedCsv = parsedData ? parsedData : XcellifyCsv.parse(csvData);
 	var cols = parsedCsv.maxCols; // csvData[0].length
 	var rows = parsedCsv.maxRows; // csvData.length
 	var tableData = parsedCsv.rows;
