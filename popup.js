@@ -2,6 +2,7 @@ var tabid=0,winid=0,jsonloaded=false;
 var xcellController;
 var docJsObj = null;
 var docJsName = '';
+var currentTab;
 
 function _gel(g){
 	return document.getElementById(g);
@@ -10,7 +11,7 @@ function _gel(g){
 function popupimage(mylink, windowname)
 {
 	var w=Math.round(window.outerWidth*1.114),h=Math.round(window.outerHeight*1.15);
-	chrome.windows.create({url:mylink.href,width:w,height:h,focused:false,type:"panel"},function(win){});
+	chrome.windows.create({url:mylink.href,width:w,height:h,type:"panel"},function(win){});
 	return false;
 }
 
@@ -83,8 +84,11 @@ function parseJsArea(ev){
 	}
 }
 
-function gotJsonDoc(name, doc){
+var alreadyGotDocument = false;
 
+function gotJsonDoc(name, doc){
+	if(alreadyGotDocument) return;
+	alreadyGotDocument = true;
 	removeNotice();
 
 	jsonloaded=true;
@@ -244,8 +248,26 @@ function visitOptions(){
   window.open(chrome.extension.getURL("options.html"));
 }
 
+function tryAndLoad(){
+	if(!currentTab) return;
+	var xhr = new XMLHttpRequest();
+	xhr.onreadystatechange=function(){
+		if(xhr.readyState == 4){
+			console.log(xhr);
+			filename = currentTab.split('?')[0].split('/');
+			filename = filename[filename.length -1];
+			gotJsonDoc(filename, xhr.responseText);
+		}
+	};
+	xhr.open('GET', currentTab, true);
+	xhr.send();
+}
+
 function begiinWithWindow(){
 	chrome.tabs.getSelected(winid, function(tab){
+		currentTab = tab.url;
+		tryAndLoad();
+
 		tabid=tab.id;
 		chrome.tabs.sendMessage(tabid,{getJsonDoc:true},function(r){
 			if( r && r.name ){
@@ -282,7 +304,7 @@ function begiin(){
 }
 
 chrome.runtime.onMessage.addListener(function(r, sender, sendResponse) {
-	if(r.doc && r.name){
+	if(!alreadyGotDocument && r.doc && r.name){
 		gotJsonDoc(r.name, r.doc);
 	}
 });
