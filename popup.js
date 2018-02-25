@@ -88,12 +88,15 @@ var alreadyGotDocument = false;
 
 function gotJsonDoc(name, doc){
 	if(alreadyGotDocument) return;
-	alreadyGotDocument = true;
-	removeNotice();
+	if(!doc) return;
 
-	jsonloaded=true;
+	removeNotice();
 	//document.body.innerHTML = doc;
 	docJsObj = JSON.parse(doc);
+	if(alreadyGotDocument) return;
+	alreadyGotDocument = true;
+	jsonloaded=true;
+
 	window.json = docJsObj;
 	docJsName = name;
 
@@ -253,7 +256,6 @@ function tryAndLoad(){
 	var xhr = new XMLHttpRequest();
 	xhr.onreadystatechange=function(){
 		if(xhr.readyState == 4){
-			console.log(xhr);
 			filename = currentTab.split('?')[0].split('/');
 			filename = filename[filename.length -1];
 			gotJsonDoc(filename, xhr.responseText);
@@ -264,7 +266,8 @@ function tryAndLoad(){
 }
 
 function begiinWithWindow(){
-	chrome.tabs.getSelected(winid, function(tab){
+	chrome.tabs.query({windowId: winid, active: true}, function(tabs){
+		var tab = tabs[0];
 		currentTab = tab.url;
 		tryAndLoad();
 

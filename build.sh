@@ -25,7 +25,7 @@ echo "cleaning up"
 rm -fr build/build*
 rm -fr build/$PROG.*.zip
 rm -fr build/*.psd
-rm -fr build/*.json
+rm -fr build/js*.json
 rm -fr build/jsonc
 
 echo "determining version number"
