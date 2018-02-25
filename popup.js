@@ -3,6 +3,7 @@ var xcellController;
 var docJsObj = null;
 var docJsName = '';
 var currentTab;
+var isFirefox = window.navigator.userAgent.indexOf('Firefox') > -1;
 
 function _gel(g){
 	return document.getElementById(g);
@@ -338,7 +339,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
 	setTimeout(function(){
 		if(!jsonloaded){
-			showNotice("JSON to CSV taking a long time loading, or not available on this page. You may need to refresh the page. Sorry!");
+			var suggestMessage = '';
+			if( isFirefox ) suggestMessage = 'Saving the file to disk as a plan .txt file may help.';
+			showNotice("JSON to CSV taking a long time loading, or not available on this page. You may need to refresh the page. "+suggestMessage+" Sorry!");
 		}
 	},2500)
 });
