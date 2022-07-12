@@ -340,7 +340,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	setTimeout(function(){
 		if(!jsonloaded){
 			var suggestMessage = '';
-			if( isFirefox ) suggestMessage = 'Saving the file to disk as a plan .txt file may help.';
+			if( isFirefox ) suggestMessage = 'Saving the file to disk as a plan .txt file may help (If this extension may be allowed to run on the local file URL as per your preference).';
 			showNotice("JSON to CSV taking a long time loading, or not available on this page. You may need to refresh the page. "+suggestMessage+" Sorry!");
 		}
 	},2500)
