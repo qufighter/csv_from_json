@@ -27,7 +27,7 @@
           "128": "images/icon128.png" },
    "content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self'",
    "permissions": [
-          "<all_urls>","tabs"
+          "<all_urls>","activeTab"
         ],
-   "version": "0.0.1.10"
+   "version": "0.0.1.11"
 }
