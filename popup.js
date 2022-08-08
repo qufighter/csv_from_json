@@ -1,13 +1,53 @@
 var tabid=0,winid=0,jsonloaded=false;
 var xcellController;
-var docJsObj = null;
+//var docJsObj = null;
 var docJsName = '';
 var currentTab;
-var isFirefox = window.navigator.userAgent.indexOf('Firefox') > -1;
+var isFirefox = navigator.userAgent.indexOf('Firefox') > -1;
 
 function _gel(g){
 	return document.getElementById(g);
 }
+
+// getting messages from our sandbox'd frame...
+window.addEventListener("message", function(ev){
+    // anticipation: ev.data is JSON doc
+
+    if( ev.data.substr(0, 7) == 'gotmsg:' ){
+        
+        var messagesArr = [];
+        var messageArea = _gel('messages');
+        try{
+            messagesArr = JSON.parse(ev.data.substr(7));
+        }catch(e){
+            // todo handle this
+            console.error('message parse failure', e);
+        }
+
+        for( var m=0; m<messagesArr.length; m++ ){
+            
+            Cr.elm('div',{},[Cr.txt(messagesArr[m])],messageArea);
+        }
+
+    }else if(ev.data.substr(0, 7)  == 'gotdoc:' ){
+        
+        var result = [];
+        
+        try{
+            result = JSON.parse(ev.data.substr(7));
+            
+            
+        }catch(e){
+            // todo handle this
+            console.error('doc result parse failure', e);
+        }
+        
+        
+        previewJsonDoc(result);
+    }
+    
+});
+
 
 function popupimage(mylink, windowname)
 {
@@ -46,43 +86,15 @@ function makeSaveButton(saveBtn, fileName, data){
 }
 
 function parseJsArea(ev){
-	removeNotice();
+
+    var messageArea = _gel('messages');
+    Cr.empty(messageArea);
+    
+    removeNotice();
+    
 	var jsScript = _gel('transform').value;
-	jsScript = jsScript.replace(/^\s+|\s+$/g, '');
-	if( !jsScript ) jsScript = 'json';
-	_gel('transform').value = jsScript;
-	localStorage["lastScript"] = jsScript;
-	var docPartial = false;
-	var messageArea = _gel('messages');
-	Cr.empty(messageArea);
-	try{
-		docPartial = eval(jsScript);
-	}catch(e){
-		Cr.elm('div',{},[Cr.txt(e.message)],messageArea);
-		docPartial = false;
-	}
+    _gel('sandboxed_frame').contentWindow.postMessage('want-new-result-for:'+jsScript);
 
-	var lazyCount = jsScript.match(/Lazy\(/g);
-	lazyCount = lazyCount ? lazyCount.length : 0;
-	var toArrCnt = jsScript.match(/\.toArray\(\)/g);
-	toArrCnt = toArrCnt ? toArrCnt.length : 0;
-	var toObjectCnt = jsScript.match(/\.toObject\(\)/g);
-	toObjectCnt = toObjectCnt ? toObjectCnt.length : 0;
-
-	if( lazyCount > 1 && lazyCount > toArrCnt + toObjectCnt ){
-		docPartial = false;
-		Cr.elm('div',{},[Cr.txt("Each Lazy() created must lead to one .toArray() or .toObject()")],messageArea);
-	}
-
-	if( docPartial.getIterator && docPartial.toArray && docPartial.toObject ){
-		docPartial = docPartial.toArray();
-		Cr.elm('div',{},[Cr.txt("Lazy.js evaluation must end with .toArray() or .toObject() - toArray() assumed")],messageArea);
-	}
-
-	if( docPartial ) previewJsonDoc(docPartial);
-	else{
-		Cr.elm('div',{},[Cr.txt("Expression evaluated to: "+docPartial)],messageArea);
-	}
 }
 
 var alreadyGotDocument = false;
@@ -90,28 +102,48 @@ var alreadyGotDocument = false;
 function gotJsonDoc(name, doc){
 	if(alreadyGotDocument) return;
 	if(!doc) return;
+    
 
-	removeNotice();
-	//document.body.innerHTML = doc;
-	docJsObj = JSON.parse(doc);
-	if(alreadyGotDocument) return;
-	alreadyGotDocument = true;
-	jsonloaded=true;
+    var currentValue=_gel('transform').value;
+    if( !currentValue ) _gel('transform').value="json";
 
-	window.json = docJsObj;
-	docJsName = name;
+    if( localStorage["lastScript"] ){
+        if( !currentValue || prompt("Conundrum, clear current script replacing value in storage?\n\nStored Value:\n\n"+localStorage["lastScript"]+"\n\nIf you press OK you will save the above and loose what is below.\n\nCurrently Edited Script (copy if you need it):", currentValue)){
+            _gel('transform').value = localStorage["lastScript"];
+        }
+    }
+    
+    _gel('sandboxed_frame').contentWindow.postMessage(JSON.stringify({
+        opt: {
+            lazyJsEnabled: localStorage['lazyJsEnabled'] == 'true',
+            lodashJsEnabled: localStorage['lodashJsEnabled'] == 'true',
+            lodashFullJsEnabled: localStorage['lodashFullJsEnabled'] == 'true',
+            autoParse: localStorage["autoParse"]=='true'
+        },
+        tx: _gel('transform').value,
+        doc: doc
+    }));
+    // // we will still do much of this below... but will not do so in the future!! mv3
 
-	var currentValue=_gel('transform').value;
-	if( !currentValue ) _gel('transform').value="json";
+    removeNotice();
+    jsonloaded=true;
 
-	if( localStorage["autoParse"]=='true' ) previewJsonDoc(docJsObj);
-	else showNotice("press Evaluate to continue...");
+    //document.body.innerHTML = doc;
+    //docJsObj = JSON.parse(doc);
+    
+    
+    if(alreadyGotDocument) return;
+    alreadyGotDocument = true;
+    jsonloaded=true;
 
-	if( localStorage["lastScript"] ){
-		if( !currentValue || prompt("Conundrum, clear current script replacing value in storage?\n\nStored Value:\n\n"+localStorage["lastScript"]+"\n\nIf you press OK you will save the above and loose what is below.\n\nCurrently Edited Script (copy if you need it):", currentValue)){
-			_gel('transform').value = localStorage["lastScript"];
-		}
-	}
+    //window.json = docJsObj;
+    docJsName = name;
+
+
+//	if( localStorage["autoParse"]=='true' ) previewJsonDoc(docJsObj);
+//	else showNotice("press Evaluate to continue...");
+
+
 }
 
 function dupeAtTop(btn){
@@ -294,14 +326,6 @@ function begiin(){
 		begiinWithWindow();
 	}
 
-	if( localStorage['lazyJsEnabled'] == 'true' ){attachScript("lazy.js");}
-	if( localStorage['lodashJsEnabled'] == 'true' ){
-		if( localStorage['lodashFullJsEnabled'] == 'true' ){
-			attachScript("lodash_full.js");
-		}else{
-			attachScript("lodash.js");
-		}
-	}
 
 	createOptionsLinksOnce();
 	_gel('go').addEventListener('click', parseJsArea);
@@ -329,13 +353,17 @@ function showNotice(m){
 var popoutMode=false;
 document.addEventListener('DOMContentLoaded', function () {
 
-	if(window.location.hash){
-		winid = window.location.hash.replace('#','')-0;  // todo pass tab ID too - then persists reload
-		popoutMode=true;
-		begiin();
-	}else{
-		begiin();
-	}
+    _gel('sandboxed_frame').contentWindow.addEventListener('load', function () {
+
+        if(window.location.hash){
+            winid = window.location.hash.replace('#','')-0;  // todo pass tab ID too - then persists reload
+            popoutMode=true;
+            begiin();
+        }else{
+            begiin();
+        }
+
+    });
 
 	setTimeout(function(){
 		if(!jsonloaded){
@@ -343,5 +371,6 @@ document.addEventListener('DOMContentLoaded', function () {
 			if( isFirefox ) suggestMessage = 'Saving the file to disk as a plan .txt file may help (If this extension may be allowed to run on the local file URL as per your preference).';
 			showNotice("JSON to CSV taking a long time loading, or not available on this page. You may need to refresh the page. "+suggestMessage+" Sorry!");
 		}
-	},2500)
+	},2500);
+    
 });

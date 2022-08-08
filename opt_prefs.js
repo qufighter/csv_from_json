@@ -8,7 +8,7 @@ pOptions["spreadsheetView"]={def:false,ind:0,name:'Sheet Grid Preview (May be sl
 pOptions["xcellify"]={def:true,ind:1,name:'Xcellify Preview (select multiple cells, slower)'};
 pOptions["lazyJsEnabled"]={def:true,ind:0,name:'Enable Lazy.js Evaluators'};
 pOptions["lodashJsEnabled"]={def:true,ind:0,name:'Enable Lodash (underscore) Evaluators'};
-pOptions["lodashFullJsEnabled"]={def:false,ind:1,name:'Use Lodash 4.17.2 full build'};
+pOptions["lodashFullJsEnabled"]={def:false,ind:1,name:'Use Lodash full build'};
 
 function setOptionDefaults(){
 	for( i in pOptions){
