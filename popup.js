@@ -4,6 +4,7 @@ var xcellController;
 var docJsName = '';
 var currentTab;
 var isFirefox = navigator.userAgent.indexOf('Firefox') > -1;
+var alreadyGotDocument = false;
 
 function _gel(g){
 	return document.getElementById(g);
@@ -12,13 +13,13 @@ function _gel(g){
 // getting messages from our sandbox'd frame...
 window.addEventListener("message", function(ev){
     // anticipation: ev.data is JSON doc
-
-    if( ev.data.substr(0, 7) == 'gotmsg:' ){
+    console.log('csv_from_json sandbox sent message to popup...')
+    if( ev.data.gotmsg ){
         
         var messagesArr = [];
         var messageArea = _gel('messages');
         try{
-            messagesArr = JSON.parse(ev.data.substr(7));
+            messagesArr = JSON.parse(ev.data.gotmsg);
         }catch(e){
             // todo handle this
             console.error('message parse failure', e);
@@ -29,12 +30,12 @@ window.addEventListener("message", function(ev){
             Cr.elm('div',{},[Cr.txt(messagesArr[m])],messageArea);
         }
 
-    }else if(ev.data.substr(0, 7)  == 'gotdoc:' ){
+    }else if(ev.data.gotdoc){
         
         var result = [];
         
         try{
-            result = JSON.parse(ev.data.substr(7));
+            result = JSON.parse(ev.data.gotdoc);
             
             
         }catch(e){
@@ -57,7 +58,7 @@ function popupimage(mylink, windowname)
 }
 
 function popOut(){
-	popupimage({href:chrome.extension.getURL('popup.html')+'#'+winid},"JSON to CSV : Chrome Extension");
+	popupimage({href:chrome.runtime.getURL('popup.html')+'#'+winid},"JSON to CSV : Chrome Extension");
 	ev.preventDefault();
 }
 
@@ -93,11 +94,10 @@ function parseJsArea(ev){
     removeNotice();
     
 	var jsScript = _gel('transform').value;
-    _gel('sandboxed_frame').contentWindow.postMessage('want-new-result-for:'+jsScript);
+    _gel('sandboxed_frame').contentWindow.postMessage('want-new-result-for:'+jsScript, '*');
 
 }
 
-var alreadyGotDocument = false;
 
 function gotJsonDoc(name, doc){
 	if(alreadyGotDocument) return;
@@ -113,7 +113,8 @@ function gotJsonDoc(name, doc){
         }
     }
     
-    _gel('sandboxed_frame').contentWindow.postMessage(JSON.stringify({
+    console.log('csv_from_json sending messsage to sandbox....')
+    _gel('sandboxed_frame').contentWindow.postMessage({
         opt: {
             lazyJsEnabled: localStorage['lazyJsEnabled'] == 'true',
             lodashJsEnabled: localStorage['lodashJsEnabled'] == 'true',
@@ -122,28 +123,15 @@ function gotJsonDoc(name, doc){
         },
         tx: _gel('transform').value,
         doc: doc
-    }));
-    // // we will still do much of this below... but will not do so in the future!! mv3
+    }, '*');
 
+    
     removeNotice();
     jsonloaded=true;
-
-    //document.body.innerHTML = doc;
-    //docJsObj = JSON.parse(doc);
-    
-    
-    if(alreadyGotDocument) return;
-    alreadyGotDocument = true;
-    jsonloaded=true;
-
-    //window.json = docJsObj;
     docJsName = name;
+    alreadyGotDocument = true;
 
-
-//	if( localStorage["autoParse"]=='true' ) previewJsonDoc(docJsObj);
-//	else showNotice("press Evaluate to continue...");
-
-
+    if( !localStorage["autoParse"]=='true' ) showNotice("press Evaluate to continue...");
 }
 
 function dupeAtTop(btn){
@@ -281,7 +269,7 @@ function preview_plain(conatinerElm, csvData){
 }
 
 function visitOptions(){
-  window.open(chrome.extension.getURL("options.html"));
+  window.open(chrome.runtime.getURL("options.html"));
 }
 
 function tryAndLoad(){
@@ -305,6 +293,7 @@ function begiinWithWindow(){
 		tryAndLoad();
 
 		tabid=tab.id;
+        console.log('popup trying to reach tab id....', tabid);
 		chrome.tabs.sendMessage(tabid,{getJsonDoc:true},function(r){
 			if( r && r.name ){
 				gotJsonDoc(r.name, r.doc);
@@ -351,19 +340,44 @@ function showNotice(m){
 }
 
 var popoutMode=false;
+
+
+function checkSandboxFrameLoaded() {
+    // Get a handle to the iframe element
+    var sandboxFrame = _gel('sandboxed_frame');
+    var sandboxFrameDoc = sandboxFrame.contentDocument || sandboxFrame.contentWindow.document;
+
+    // Check if loading is complete
+    if (  sandboxFrameDoc.readyState  == 'complete' ) {
+        //sandboxFrame.contentWindow.alert("Hello");
+        sandboxFrame.contentWindow.onload = function(){
+            alert("I am loaded");
+        };
+        // The loading is complete, call the function we want executed once the sandboxFrame is loaded
+        sandboxFrameIsReady()
+        return;
+    }
+
+    // If we are here, it is not loaded. Set things up so we check   the status again in 100 milliseconds
+    window.setTimeout(checkSandboxFrameLoaded, 100);
+}
+
+function sandboxFrameIsReady(){
+    if(window.location.hash){
+        winid = window.location.hash.replace('#','')-0;  // todo pass tab ID too - then persists reload
+        popoutMode=true;
+        begiin();
+    }else{
+        begiin();
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function () {
 
-    _gel('sandboxed_frame').contentWindow.addEventListener('load', function () {
-
-        if(window.location.hash){
-            winid = window.location.hash.replace('#','')-0;  // todo pass tab ID too - then persists reload
-            popoutMode=true;
-            begiin();
-        }else{
-            begiin();
-        }
-
-    });
+    checkSandboxFrameLoaded();
+    //_gel('sandboxed_frame').contentWindow.addEventListener('load', function () {
+        //sandboxFrameIsReady()
+    //});
 
 	setTimeout(function(){
 		if(!jsonloaded){

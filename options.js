@@ -35,7 +35,7 @@ function save_options() {
 	if(!iconbitmap){
 		var iconPath='';
 		if(appleIcon)iconPath='apple/';
-		chrome.browserAction.setIcon({path:chrome.extension.getURL(iconPath+'icon19.png')});//update icon (to be configurable)
+		chrome.action.setIcon({path:chrome.runtime.getURL(iconPath+'icon19.png')});//update icon (to be configurable)
 	}
 
 	// Update status to let user know options were saved.
@@ -220,3 +220,5 @@ document.addEventListener('DOMContentLoaded', function () {
 	}
 	
 });
+
+

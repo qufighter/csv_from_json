@@ -1,11 +1,24 @@
-var parentWindow=null;
+var parentWindow=window.parent;
 var docJsObj = null;
 var opts = {};
 var nextScriptToEval = 'json';
+var alreadyGotDocument = false;
+
+// seemingly... sandbox can only communicate outwards???  time for reeng
+parentWindow.postMessage(
+  {succes: true},
+  '*'
+);
+
 
 window.addEventListener("message", function(ev){
-    parentWindow = ev.source;
+    console.log('csv_from_json sandbox got a message...', ev.data);
+    //parentWindow = ev.source;
     if( !alreadyGotDocument ){
+        if( ev.data.substring && ev.data.substring(0, 20) == 'want-new-result-for:'){
+            console.warn("sandbox: looks like we got an evaluate request but we never got a document")
+                return;
+        }
         gotJsonDoc('arbatrary.json', ev.data);
         begiin();
     }else{
@@ -52,17 +65,16 @@ function parseJsArea(ev){
         messages.push("Expression evaluated to: "+docPartial);
 	}
     
-    parentWindow.postMessage('gotmsg:'+JSON.stringify(messages));
-    parentWindow.postMessage('gotdoc:'+JSON.stringify(docPartial));
+    parentWindow.postMessage({gotmsg:JSON.stringify(messages)}, '*');
+    parentWindow.postMessage({gotdoc:JSON.stringify(docPartial)}, '*');
 }
 
-var alreadyGotDocument = false;
 
 function gotJsonDoc(name, doc){
 	if(alreadyGotDocument) return;
 	if(!doc) return;
     
-	docJsObj = JSON.parse(doc);
+	docJsObj = doc; //JSON.parse(doc);
     opts = docJsObj.opt;
     console.log('options', opts);
     nextScriptToEval = docJsObj.tx;

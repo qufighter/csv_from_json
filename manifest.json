@@ -1,13 +1,13 @@
 {
-   "manifest_version": 2,
+   "manifest_version": 3,
    "description": "download .JSON to .CSV",
    "name": "JSON to CSV",
    "content_scripts": [ {
       "js": [ "jsontocsv.user.js" ],
       "run_at": "document_idle",
-      "matches": [ "<all_urls>" ]
+      "matches": [ "<all_urls>", "file:///*" ]
    } ],
-   "browser_action": {
+   "action": {
       "default_icon": {
         "19": "images/inactive/icon19.png",
         "38": "images/inactive/icon38.png"
@@ -16,19 +16,33 @@
       "default_popup": "popup.html"
     },
    "background": {
-      "scripts": ["background.js"],
-      "persistent": false
+      "service_worker": "background.js"
    },
-   "options_page": "options.html",
-   "sandbox": ["popup_sandbox.html"],
+   "sandbox": [],
    "icons": { "16": "images/icon16.png",
            "32": "images/icon32.png",
            "48": "images/icon48.png",
            "64": "images/icon64.png",
-          "128": "images/icon128.png" },
-   "content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self'",
+          "128": "images/icon128.png"
+   },
+   "content_security_policy": {
+     "extension_pages": "script-src 'self'; object-src 'self'",
+     "sandbox": "sandbox allow-scripts; script-src 'self' 'unsafe-eval';"
+   },
+   "sandbox":{
+     "pages": [
+       "popup_sandbox.html"
+     ]
+   },
    "permissions": [
-          "<all_urls>","activeTab"
-        ],
+       "activeTab"
+   ],
+   "web_accessible_resources": [{
+      "resources": [],
+      "matches":[ "file:///*" ]
+   }],
+   "host_permissions": [
+       "<all_urls>"
+   ],
    "version": "0.0.1.11"
 }
