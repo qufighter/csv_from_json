@@ -13,12 +13,13 @@ function _gel(g){
 // getting messages from our sandbox'd frame...
 window.addEventListener("message", function(ev){
     // anticipation: ev.data is JSON doc
-    console.log('csv_from_json sandbox sent message to popup...')
+    console.log('csv_from_json sandbox sent message to popup...', ev.data)
     if( ev.data.gotmsg ){
         
         var messagesArr = [];
         var messageArea = _gel('messages');
         try{
+            console.log('mesages', ev.data.gotmsg)
             messagesArr = JSON.parse(ev.data.gotmsg);
         }catch(e){
             // todo handle this
@@ -37,6 +38,9 @@ window.addEventListener("message", function(ev){
         try{
             result = JSON.parse(ev.data.gotdoc);
             
+            // I guess the scrip twas good? we'd need to also check messages to see???
+            localStorage["lastScript"] = _gel('transform').value; // we may wish to cache more script....
+            console.warn('script was saved... verify this should be the case...')
             
         }catch(e){
             // todo handle this
@@ -100,7 +104,12 @@ function parseJsArea(ev){
 
 
 function gotJsonDoc(name, doc){
-	if(alreadyGotDocument) return;
+    if(alreadyGotDocument){
+        console.warn("we already got a document, so this one will be ignored:", name, doc);
+        return;
+    }else{
+        console.log("document loaded, here is what we got:", name, doc);
+    }
 	if(!doc) return;
     
 
@@ -279,7 +288,18 @@ function tryAndLoad(){
 		if(xhr.readyState == 4){
 			filename = currentTab.split('?')[0].split('/');
 			filename = filename[filename.length -1];
-			gotJsonDoc(filename, xhr.responseText);
+            console.log('loaded from xmlhttp directly from popup...');
+			
+            
+            try{
+                var docJson = JSON.parse(xhr.responseText);
+                gotJsonDoc(filename, xhr.responseText);
+                // we could tell the bg page to activate the icon... etc...
+                chrome.runtime.sendMessage({enable:true, tabId: tabid}, function(response){});
+            }catch(e){
+                console.log('was not json', e)
+            }
+            
 		}
 	};
 	xhr.open('GET', currentTab, true);
@@ -289,18 +309,47 @@ function tryAndLoad(){
 function begiinWithWindow(){
 	chrome.tabs.query({windowId: winid, active: true}, function(tabs){
 		var tab = tabs[0];
+        
+        // deal breaker: sometimes in MV3 the tab.url is MISSING (wtf) and sometimes it is there (double wtf...)
+        // should we ALSO try to exec our content script???
+        // (and both ways??? eg add the doc to head (as though we are on an extension html page) and also with evaluateScript???
+        /// since we don't know what type of page we are on??!?!?! because somehow URL is missing?!?!?!!?!?
+        
+        
+        // WHen the tab has a URL we will try to fetch it above with xmlhttp and also via bg page.... that is if the content scirpt won't report first....
+        
 		currentTab = tab.url;
 		tryAndLoad();
 
 		tabid=tab.id;
         console.log('popup trying to reach tab id....', tabid);
+        
 		chrome.tabs.sendMessage(tabid,{getJsonDoc:true},function(r){
 			if( r && r.name ){
 				gotJsonDoc(r.name, r.doc);
 			}else{
-				console.log('seems to not be a JSON document! Or its taking too long to load...');
+				console.log('seems to not be a JSON document! Or its taking too long to load...', r, tab);
+                
+                if( tab.url.indexOf( '//'+chrome.runtime.id+'/' ) > -1 ){
+                    // maybe the BG page can jsut fetch this for us instead of the content script!
+                    console.log('content scripts cannot run on this type of page.... (extension files...)')
+                }
+                
+                console.log('asking bg directly...', tab.url);
+                
+                // note, for all this jazz, we also already did tryAndLoad above, and our xmlhttp request COULD work... never know!
+                
+                chrome.runtime.sendMessage({getJsonFile:''+tab.url, source:'popup'}, function(response){
+                    console.log('request for json file sent from popup to bg page' , response);
+                });
+                
+                
+
+                
 			}
 		});
+        
+        docJsName = tab.url.match(/[\w\.\-]+$/); // backup... we'll get this from content script normally...
 	});
 }
 
@@ -322,8 +371,27 @@ function begiin(){
 
 chrome.runtime.onMessage.addListener(function(r, sender, sendResponse) {
 	if(!alreadyGotDocument && r.doc && r.name){
+        console.log('document socured from ', sender);
 		gotJsonDoc(r.name, r.doc);
-	}
+    }else if(r.gotJsonDocument){
+        // this is if the popup is talkign direct to BG page (not the normal flow via content script...)
+        // in this case we really want to treat this like above, however we are misisng some key pieces of info...
+        
+        console.log('look what we git from gb page... ', r);
+        
+        try{
+            var docJson = JSON.parse(r.gotJsonDocument);
+            gotJsonDoc(docJsName, r.gotJsonDocument);
+            // we could tell the bg page to activate the icon... etc...
+            chrome.runtime.sendMessage({enable:true, tabId: tabid}, function(response){});
+        }catch(e){
+            console.log('was not json', e)
+        }
+        
+
+
+    }
+    sendResponse({});
 });
 
 function attachScript(s){
@@ -351,10 +419,11 @@ function checkSandboxFrameLoaded() {
     if (  sandboxFrameDoc.readyState  == 'complete' ) {
         //sandboxFrame.contentWindow.alert("Hello");
         sandboxFrame.contentWindow.onload = function(){
-            alert("I am loaded");
+            //alert("I am loaded");
+            console.log('sandbox frame congtent window loaded callback...')
         };
         // The loading is complete, call the function we want executed once the sandboxFrame is loaded
-        sandboxFrameIsReady()
+        setTimeout(sandboxFrameIsReady, 250); // nonsense timeout... is actually needed (the sandbox is never really ready...)
         return;
     }
 

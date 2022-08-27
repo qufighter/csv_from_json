@@ -25,6 +25,7 @@
 	#history{position:relative;}
 	#cotd{display:none;}
 	#shoadvanc{display:none;}
+    .mono{font-family:monospace;}
 </style>
 <script src="opt_prefs.js"></script>
 <script src="options.js"></script>
@@ -77,10 +78,137 @@ Lazy(json)
 	<br/><br/>One day this may go without saying, but if you wish to use this extension on local file:/// url(s) you must explicitly grant this extension permission to do so from the Extensions screen.  This difficulty is a completely understandable security measure.
 
     <br/><br/>
-    Test Files:
+    <h3>Test Files</h3>
     
-    <br/><br/><a href="jsonb.json">jsonb.json</a>
+    <br/><br/><a target="_blank" href="jsonb.json">jsonb.json</a> For this file, try the following script:
     
+    <h6>For Simpler Export: Flat List/Table Export (both options checked, default)</h6>
+    <pre>
+        [{"Column 5":json["web-app"].servlet[0]["servlet-name"]}]
+    </pre>
+    
+    Basically this works where you can generate an array of named columns... every element in the array should have the same columns.
+    
+    This is the most powerful mode for totally custom export... and I recommend using the powerful features of the libraries you enabled, eg:
+    
+    <pre>
+        Lazy(json['web-app'].servlet)
+        .map(function(item){
+         return Lazy(item)
+                .omit(['init-param'])
+                .toObject()
+        }).toArray()
+    </pre>
+    
+    or
+    
+    <pre>
+        _.map(json['web-app'].servlet, function(item){
+         return _.omit(item, ['init-param'])
+        });
+    </pre>
+    
+    The later requires lodash full build.  See the links to docs below!  The inverse of omit (pluck) is also available for both.
+    <br/><br/>
+
+    Lazy.js may be faster at generating the results of some scripts.
+    <br/><br/>
+
+    As your scripts become more advanced, you may run inot some gotchas, for example... each element in the array should/must have the same keys...
+    Here is one way to handle this using _.defaults(obj, defaultA)
+    
+    <pre>
+        _.map(json['web-app'].servlet, function(item){
+          return _.extend(
+              _.omit(item, ['init-param']),
+              _.defaults(_.pick(item['init-param'], ['templatePath']),  {'templatePath':'N/A'}),
+              _.defaults(_.pick(item['init-param'], ['useJSP']      ),  {'useJSP':'N/A'}      ),
+              _.defaults(_.pick(item['init-param'], ['adminGroupID']),  {'adminGroupID':'N/A'})
+          )
+         });
+    </pre>
+    
+    Most developers will find parts of the indentation above weird, but I lined things up for you...
+    
+    keep in mind many scripts will have to adapt to varying json... for example if the json file added new keys sporatically near servlet-name then our script may be in trouble.  In the case of the example the sciript still works.
+    
+    Part of the reason it is borken is due to the way we don't loop the results again and ensure the same keys for every object... mostly because
+    of the expense of this... however you could also add such a wrapper yourself!! eg:
+    
+    <pre>
+        _.map(json['web-app'].servlet, function(item){
+          return _.extend(
+              _.omit(item, ['init-param']),
+              _.pick(item['init-param'], ['templatePath']),
+              _.pick(item['init-param'], ['useJSP']      ),
+              _.pick(item['init-param'], ['adminGroupID'])
+          )
+         });
+    </pre>
+    
+    the above script produced broken results... fix it yourself!:
+    
+    <pre>
+        (function(){
+                var results = _.map(json['web-app'].servlet, function(item){
+                  return _.extend(
+                      _.omit(item, ['init-param']),
+                      _.pick(item['init-param'], ['templatePath']),
+                      _.pick(item['init-param'], ['useJSP']      ),
+                      _.pick(item['init-param'], ['adminGroupID'])
+                  )
+                 });
+                 
+                 var keysNeeded = {};
+                 
+                 _.forEach(results, function(row){ keysNeeded = _.defaults(keysNeeded, row) });
+                 
+                 console.log('keys needed: ', keysNeeded); // inspect popup to see a message in console! cool :)
+                 
+                 var defaultValues = _.mapValues(keysNeeded, function(value, key, object){return 'N/A'});
+                 console.log('defaults map: ', defaultValues);
+
+                 results = _.forEach(results, function(row){
+                     return _.defaults(row, defaultValues)
+                 })
+
+                 return results;
+        })()
+    </pre>
+    
+    If you haven't noticed the trick yet, the function wrapper (first and last line above) allows you to use multi-statement scripts as long as you return a single statement.
+    <br/><br/>
+    We'd do this for you always but it ads overhead you'd be able to avoid with most files and a deterministic script... maybe an option in the future...
+    
+    <h6>For Simpler Export (but not flat list/table)</h6>
+    <pre>
+        [{"Column 5":json["web-app"].servlet[0]["servlet-name"]}]
+    </pre>
+    
+    The default type of script would also work, but you might miss what's happening here.
+    
+    Instead you can use a script like this, and it will dump everything:
+    
+    <pre>
+        json['web-app'].servlet[0]
+    </pre>
+    
+    But there are limits to how much filtering you can apply to these results... see below!
+
+    <h6>For Both Simpler and Flat list unchecked (dump all mode)</h6>
+    <pre>
+        json['web-app'].servlet[0]
+    </pre>
+    In this mode, any object or array reached will be dumped and anything that must be repeated/expanded will be expanded.
+    
+    This is the most default filterable, but least customized output.  Great if you want to scan json in excel rows, and be able to directly reference where in the document to find what you are referencing by simply copying the row.
+    
+    <br/><br/>
+    <span style="color:red">NOTE: if any script seems to fail, make sure you are on the json document tab when you trigger the popup!</span>
+    
+    <br/><br/>
+    <span style="color:green">If you are new to scripting, you may wonder about the access of objects in javascript using <span class="mono">obj.prop</span> vs <span class="mono">obj['prop']</span> vs <span class="mono">obj["prop"]</span>.  Please note as illustrated above, these are interchangable HOWEVER some properties (namely those containign dashes) may NOT be accessed using the first (dot) notation.</span>
+
 </div>
 
 <br/><br/><b>Documentation</b><br/>

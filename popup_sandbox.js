@@ -56,7 +56,7 @@ function parseJsArea(ev){
         messages.push("Each Lazy() created must lead to one .toArray() or .toObject()");
 	}
 
-	if( docPartial.getIterator && docPartial.toArray && docPartial.toObject ){
+	if( docPartial && docPartial.getIterator && docPartial.toArray && docPartial.toObject ){
 		docPartial = docPartial.toArray();
         messages.push("Lazy.js evaluation must end with .toArray() or .toObject() - toArray() assumed");
 	}
@@ -102,7 +102,7 @@ function begiin(){
 	}
 
     if( opts.autoParse ){
-        parseJsArea();
+        setTimeout(parseJsArea, 250); // wondering what delay will suffice to ensure the attached scipts probably ran!
     }
 }
 
