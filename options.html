@@ -159,6 +159,10 @@ Lazy(json)
                   )
                  });
                  
+                 // note how our borken script is simply inserted above, after var results =
+                 // the following code will fix any borken results by adding the value "N/A"
+                 // for any missing keys in any row of the result set
+                 
                  var keysNeeded = {};
                  
                  _.forEach(results, function(row){ keysNeeded = _.defaults(keysNeeded, row) });
