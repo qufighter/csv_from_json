@@ -108,13 +108,13 @@ Lazy(json)
         });
     </pre>
     
-    The later requires lodash full build.  See the links to docs below!  The inverse of omit (pluck) is also available for both.
+    The later requires <b>lodash full build option</b>.  See the links to docs below!  The inverse of omit (pluck) is also available for both.
     <br/><br/>
 
     Lazy.js may be faster at generating the results of some scripts.
     <br/><br/>
 
-    As your scripts become more advanced, you may run inot some gotchas, for example... each element in the array should/must have the same keys...
+    As your scripts become more advanced, you may run into some gotchas, for example... each element in the array should/must have the same keys...
     Here is one way to handle this using _.defaults(obj, defaultA)
     
     <pre>
@@ -130,9 +130,9 @@ Lazy(json)
     
     Most developers will find parts of the indentation above weird, but I lined things up for you...
     
-    keep in mind many scripts will have to adapt to varying json... for example if the json file added new keys sporatically near servlet-name then our script may be in trouble.  In the case of the example the sciript still works.
+    keep in mind many scripts will have to adapt to varying json... for example if the json file added new keys sporadically near servlet-name then our script may be in trouble.  In the case of the example the script still works.
     
-    Part of the reason it is borken is due to the way we don't loop the results again and ensure the same keys for every object... mostly because
+    Part of the reason it is broken is due to the way we don't loop the results again and ensure the same keys for every object... mostly because
     of the expense of this... however you could also add such a wrapper yourself!! eg:
     
     <pre>
@@ -159,8 +159,8 @@ Lazy(json)
                   )
                  });
                  
-                 // note how our borken script is simply inserted above, after var results =
-                 // the following code will fix any borken results by adding the value "N/A"
+                 // note how our broken script is simply inserted above, after var results =
+                 // the following code will fix any broken results by adding the value "N/A"
                  // for any missing keys in any row of the result set
                  
                  var keysNeeded = {};
@@ -211,7 +211,7 @@ Lazy(json)
     <span style="color:red">NOTE: if any script seems to fail, make sure you are on the json document tab when you trigger the popup!</span>
     
     <br/><br/>
-    <span style="color:green">If you are new to scripting, you may wonder about the access of objects in javascript using <span class="mono">obj.prop</span> vs <span class="mono">obj['prop']</span> vs <span class="mono">obj["prop"]</span>.  Please note as illustrated above, these are interchangable HOWEVER some properties (namely those containign dashes) may NOT be accessed using the first (dot) notation.</span>
+    <span style="color:green">If you are new to scripting, you may wonder about the access of objects in javascript using <span class="mono">obj.prop</span> vs <span class="mono">obj['prop']</span> vs <span class="mono">obj["prop"]</span>.  Please note as illustrated above, these are interchangeable HOWEVER some properties (namely those containing dashes) may NOT be accessed using the first (dot) notation.</span>
 
 </div>
 
