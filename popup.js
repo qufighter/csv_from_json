@@ -13,8 +13,8 @@ function _gel(g){
 // getting messages from our sandbox'd frame...
 window.addEventListener("message", function(ev){
     // anticipation: ev.data is JSON doc
-    console.log('csv_from_json sandbox sent message to popup...', ev.data)
-    if( ev.data.gotmsg ){
+    console.log('csv_from_json sandbox sent message to popup...', Object.keys(ev.data))
+    if( ev.data.gotmsg || ev.data.gotdoc ){
         
         var messagesArr = [];
         var messageArea = _gel('messages');
@@ -25,32 +25,23 @@ window.addEventListener("message", function(ev){
             // todo handle this
             console.error('message parse failure', e);
         }
-
         for( var m=0; m<messagesArr.length; m++ ){
-            
             Cr.elm('div',{},[Cr.txt(messagesArr[m])],messageArea);
         }
-
-    }else if(ev.data.gotdoc){
         
         var result = [];
-        
         try{
             result = JSON.parse(ev.data.gotdoc);
-            
-            // I guess the scrip twas good? we'd need to also check messages to see???
-            localStorage["lastScript"] = _gel('transform').value; // we may wish to cache more script....
-            console.warn('script was saved... verify this should be the case...')
-            
+            if( messagesArr.length < 1 ){
+                localStorage["lastScript"] = _gel('transform').value; // we may wish to cache more script than the last good one....
+                console.warn('successful script was saved... ')
+            }
         }catch(e){
             // todo handle this
             console.error('doc result parse failure', e);
         }
-        
-        
         previewJsonDoc(result);
     }
-    
 });
 
 
@@ -105,10 +96,11 @@ function parseJsArea(ev){
 
 function gotJsonDoc(name, doc){
     if(alreadyGotDocument){
-        console.warn("we already got a document, so this one will be ignored:", name, doc);
+        //console.warn("we already got a document, so this one will be ignored:", name, doc);
+        console.warn("we already got a document, so this one will be ignored");
         return;
     }else{
-        console.log("document loaded, here is what we got:", name, doc);
+        console.log("DOCUMENT LOADED (popup.js)");
     }
 	if(!doc) return;
     
@@ -311,7 +303,7 @@ function tryAndLoad(){
 		if(xhr.readyState == 4){
 			filename = currentTab.split('?')[0].split('/');
 			filename = filename[filename.length -1];
-            console.log('loaded from xmlhttp directly from popup...');
+            console.log('loaded via xmlhttp directly from popup...');
 			
             
             try{
@@ -400,7 +392,7 @@ chrome.runtime.onMessage.addListener(function(r, sender, sendResponse) {
         // this is if the popup is talkign direct to BG page (not the normal flow via content script...)
         // in this case we really want to treat this like above, however we are misisng some key pieces of info...
         
-        console.log('look what we git from gb page... ', r);
+        console.log('gotJsonDocument from bg page... ');
         
         try{
             var docJson = JSON.parse(r.gotJsonDocument);

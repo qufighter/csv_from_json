@@ -12,7 +12,12 @@ parentWindow.postMessage(
 
 
 window.addEventListener("message", function(ev){
-    console.log('csv_from_json sandbox got a message...', ev.data);
+    if( typeof(ev.data) == 'string' ){
+        console.log('csv_from_json sandbox got a message...', ev.data);
+    }else{
+        console.log('csv_from_json sandbox got a message...', Object.keys(ev.data));
+    }
+    
     //parentWindow = ev.source;
     if( !alreadyGotDocument ){
         if( ev.data.substring && ev.data.substring(0, 20) == 'want-new-result-for:'){
@@ -65,8 +70,7 @@ function parseJsArea(ev){
         messages.push("Expression evaluated to: "+docPartial);
 	}
     
-    parentWindow.postMessage({gotmsg:JSON.stringify(messages)}, '*');
-    parentWindow.postMessage({gotdoc:JSON.stringify(docPartial)}, '*');
+    parentWindow.postMessage({gotmsg:JSON.stringify(messages), gotdoc:JSON.stringify(docPartial)}, '*');
 }
 
 
@@ -76,7 +80,7 @@ function gotJsonDoc(name, doc){
     
 	docJsObj = doc; //JSON.parse(doc);
     opts = docJsObj.opt;
-    console.log('options', opts);
+    console.log('sandbox options', opts);
     nextScriptToEval = docJsObj.tx;
     docJsObj = JSON.parse(docJsObj.doc);
 	if(alreadyGotDocument) return;
