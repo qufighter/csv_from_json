@@ -149,10 +149,33 @@ function dupeAtTop(btn){
 	Cr.insertNodes(save2, document.body, document.body.firstChild);
 }
 
+function validateFlatListExport(previewDocJsObj){
+    // each row may have arbatrary keys, each row must have hte same keys to avoid some problems later on....
+    var foundKeys={};
+    var k, i=0, l=previewDocJsObj.length;
+    var defVal = localStorage["flatListDefaultVal"];
+    for( i=0,l=previewDocJsObj.length; i<l; i++ ){
+        for( k in previewDocJsObj[i] ){
+            foundKeys[k] = 1;
+        }
+    }
+    for( i=0,l=previewDocJsObj.length; i<l; i++ ){
+        for( k in foundKeys ){
+            if( !previewDocJsObj[i][k] ){
+                previewDocJsObj[i][k] = defVal;
+            }
+        }
+    }
+    return previewDocJsObj;
+}
+
 function previewJsonDoc(previewDocJsObj){
 	var csvData = {}, parsedData = null;
 	if( localStorage["simpleExport"]=='true' ){
 		if( localStorage["flatListExport"]=='true' ){
+            if( localStorage["validateFlatListExport"]=='true' ){
+                previewDocJsObj=validateFlatListExport(previewDocJsObj);
+            }
 			csvData = CSVfromJSON.getFlatList(previewDocJsObj);
 		}else{
 			csvData = CSVfromJSON.getJsonMode2(previewDocJsObj);

@@ -165,6 +165,8 @@ function createOptions(piOptions, elemAppend){
 			cb.setAttribute('type','text');
 			cb.setAttribute('id',i);cb.setAttribute('size',(piOptions[i].def + '').length);
 			if(piOptions[i].ind>0)l.appendChild(document.createTextNode('\u00a0\u00a0\u00a0\u00a0'));
+            if(piOptions[i].ind>1)l.appendChild(document.createTextNode('\u00a0\u00a0\u00a0\u00a0'));
+            if(piOptions[i].ind>2)l.appendChild(document.createTextNode('\u00a0\u00a0\u00a0\u00a0'));
 			l.appendChild(cb);
 			l.appendChild(document.createTextNode(piOptions[i].name));
 			
@@ -213,7 +215,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	
 	document.getElementById('shoadvanc').addEventListener('click', toggle_next_sibling_display);
 	document.getElementById('shohelp').addEventListener('click', toggle_next_sibling_display);
-	document.getElementById('termsofuse').addEventListener('click', showHelp);
+	//document.getElementById('termsofuse').addEventListener('click', showHelp);
 
 	if(window.location.hash=='#help'){
 		toggle_next_sibling_display({target:document.getElementById('shohelp')})

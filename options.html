@@ -136,7 +136,7 @@ Lazy(json)
     keep in mind many scripts will have to adapt to varying json... for example if the json file added new keys sporadically near servlet-name then our script may be in trouble.  In the case of the example the script still works.
     
     Part of the reason it is broken is due to the way we don't loop the results again and ensure the same keys for every object... mostly because
-    of the expense of this... however you could also add such a wrapper yourself!! eg:
+    of the expense of this... (a <b>Validate Flat List Result</b> feature can be enabled...) however you could also add such a wrapper yourself!! eg:
     
     <pre>
         _.map(json['web-app'].servlet, function(item){
@@ -185,7 +185,7 @@ Lazy(json)
     
     If you haven't noticed the trick yet, the function wrapper (first and last line above) allows you to use multi-statement scripts as long as you return a single statement.
     <br/><br/>
-    We'd do this for you always but it ads overhead you'd be able to avoid with most files and a deterministic script... maybe an option in the future...
+    We'd do this for you always but it ads overhead you'd be able to avoid with most files and a deterministic script... (a <b>Validate Flat List Result</b> feature can be enabled... which will always do this for you... but if you build your own script for speed and you know each object will have the same keys, this extra 2 passes throught the loop is terribly slow for large documents or large expots!)
     
     <h6>For Simpler Export (but not flat list/table)</h6>
     <pre>
