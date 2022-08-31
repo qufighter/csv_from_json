@@ -153,7 +153,7 @@ function validateFlatListExport(previewDocJsObj){
     }
     for( i=0,l=previewDocJsObj.length; i<l; i++ ){
         for( k in foundKeys ){
-            if( !previewDocJsObj[i][k] ){
+            if( !previewDocJsObj[i][k] && typeof(previewDocJsObj[i][k]) == 'undefined' ){
                 previewDocJsObj[i][k] = defVal;
             }
         }

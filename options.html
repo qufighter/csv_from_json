@@ -54,8 +54,13 @@ Lazy(json)
     
     Simpler Example:
     
+    <a target="_blank" href="manifest.json">manifest.json</a>
     <pre>
-[{"Column 5":json.manifest_version}, {"Column 5":2}]
+        [{"Column 5":json.manifest_version}, {"Column 5": 2},{"Column 5":json.version, "Hello":''}]
+    </pre>
+    
+    <pre>
+        [{"Column 5":json.manifest_version}, {"Column 5": 2, 'hi': 0},{"Column 5":json.version, "Hello":''}]
     </pre>
     
     Basically you enter a script referencing your json file as `json` in the box, and whatever the result object is will be the spreadsheet.  Keep in mind there are other modes which you can configure in preferences with may limit functionality or may be useful in other cases...

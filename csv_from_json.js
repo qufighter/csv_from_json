@@ -53,6 +53,7 @@ function doParseObjectMode1(obj, prefix){
 function getFlatListings(obj){
 	var result = [];
 	var headers = [];
+    var rowKeys = [];
 
 	if( typeof obj != 'object' ){
 		console.error("ERROR - not flat list of objects (nor list of arrays)");
@@ -60,15 +61,29 @@ function getFlatListings(obj){
 			showNotice("JSON to CSV error - result is not flat list of objects (disable flat list mode)!");
 		}
 	}else if( Array.isArray(obj) && obj.length ){
+        
+        // we'll have to make an executive decision here... to trust first row to have our keys...
+        if( obj.length && typeof(obj[0]) == 'object' ){
+            for( var key in obj[0] ){
+                rowKeys.push(key);
+            }
+        }
+        
 		for( var i=0,l=obj.length; i<l; i++ ){
 			var row = [];
 			headers = [];
 			if( typeof(obj[i]) == 'object' ){
-				for( var key in obj[i] ){
-					headers.push(key);
-					row.push(obj[i][key])
-
-				}
+                if( rowKeys.length ){
+                    for( var ki=0,kl=rowKeys.length; ki<kl; ki++ ){
+                        headers.push(rowKeys[ki]);
+                        row.push(obj[i][rowKeys[ki]])
+                    }
+                }else{
+                    for( var key in obj[i] ){
+                        headers.push(key);
+                        row.push(obj[i][key])
+                    }
+                }
 				result.push(row);
 			}else{
 				if( !headers[0] ){
