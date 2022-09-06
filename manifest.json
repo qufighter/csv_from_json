@@ -1,6 +1,6 @@
 {
    "manifest_version": 3,
-   "description": "download .JSON to .CSV",
+   "description": "download .JSON to .CSV or in other words; custom csv from json feeds or files.",
    "name": "JSON to CSV",
    "content_scripts": [ {
       "js": [ "jsontocsv.user.js" ],
