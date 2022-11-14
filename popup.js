@@ -467,7 +467,7 @@ document.addEventListener('DOMContentLoaded', function () {
 		if(!jsonloaded){
 			var suggestMessage = '';
 			if( isFirefox ) suggestMessage = 'Saving the file to disk as a plan .txt file may help (If this extension may be allowed to run on the local file URL as per your preference).';
-			showNotice("JSON to CSV taking a long time loading, or not available on this page. You may need to refresh the page.  You may need to enable this extension for local files in the way the browser provides (extension management).  "+suggestMessage+" ");
+			showNotice("JSON to CSV taking a long time loading, or not available on this page. You may need to refresh the page.  You may need to enable this extension for local files in the way the browser provides (Extension management).  "+suggestMessage+" ");
 		}
 	},2500);
     
