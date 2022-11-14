@@ -117,10 +117,10 @@ function gotJsonDoc(name, doc){
     console.log('csv_from_json sending messsage to sandbox....')
     _gel('sandboxed_frame').contentWindow.postMessage({
         opt: {
-            lazyJsEnabled: localStorage['lazyJsEnabled'] == 'true',
-            lodashJsEnabled: localStorage['lodashJsEnabled'] == 'true',
-            lodashFullJsEnabled: localStorage['lodashFullJsEnabled'] == 'true',
-            autoParse: localStorage["autoParse"]=='true'
+            lazyJsEnabled: localStorage['lazyJsEnabled'] != 'false',
+            lodashJsEnabled: localStorage['lodashJsEnabled'] != 'false',
+            lodashFullJsEnabled: localStorage['lodashFullJsEnabled'] != 'false',
+            autoParse: localStorage["autoParse"]!='false'
         },
         tx: _gel('transform').value,
         doc: doc
@@ -132,7 +132,7 @@ function gotJsonDoc(name, doc){
     docJsName = name;
     alreadyGotDocument = true;
 
-    if( !localStorage["autoParse"]=='true' ) showNotice("press Evaluate to continue...");
+    if( !localStorage["autoParse"]!='false' ) showNotice("press Evaluate to continue...");
 }
 
 function dupeAtTop(btn){
@@ -145,7 +145,7 @@ function validateFlatListExport(previewDocJsObj){
     // each row may have arbatrary keys, each row must have hte same keys to avoid some problems later on....
     var foundKeys={};
     var k, i=0, l=previewDocJsObj.length;
-    var defVal = localStorage["flatListDefaultVal"];
+    var defVal = localStorage["flatListDefaultVal"] || 'NULL';
     for( i=0,l=previewDocJsObj.length; i<l; i++ ){
         for( k in previewDocJsObj[i] ){
             foundKeys[k] = 1;
@@ -163,9 +163,9 @@ function validateFlatListExport(previewDocJsObj){
 
 function previewJsonDoc(previewDocJsObj){
 	var csvData = {}, parsedData = null;
-	if( localStorage["simpleExport"]=='true' ){
-		if( localStorage["flatListExport"]=='true' ){
-            if( localStorage["validateFlatListExport"]=='true' ){
+	if( localStorage["simpleExport"]!='false' ){
+		if( localStorage["flatListExport"]!='false' ){
+            if( localStorage["validateFlatListExport"]!='false' ){
                 previewDocJsObj=validateFlatListExport(previewDocJsObj);
             }
 			csvData = CSVfromJSON.getFlatList(previewDocJsObj);
@@ -218,7 +218,7 @@ function removeNode(node){
 
 function previewCsvData(csvData, parsedData){
 	var conatinerElm = Cr.elm('div',{id:'preview'});
-	if( localStorage["spreadsheetView"]=='true' ){
+	if( localStorage["spreadsheetView"]!='false' ){
 		preview_spreadsheet(conatinerElm, csvData, parsedData);
 	}else{
 		preview_plain(conatinerElm, csvData);
@@ -270,7 +270,7 @@ function preview_spreadsheet(conatinerElm, csvData, parsedData){
 	Cr.empty(content);
 	content.appendChild(conatinerElm);
 
-	if(localStorage['xcellify'] != 'true') return;
+	if(localStorage['xcellify'] == 'false') return;
 
 	xcellController = new Xcellify({
 		containerElm: conatinerElm, 		// scope event listening and processing to a specific context, you can think <table>
@@ -467,7 +467,7 @@ document.addEventListener('DOMContentLoaded', function () {
 		if(!jsonloaded){
 			var suggestMessage = '';
 			if( isFirefox ) suggestMessage = 'Saving the file to disk as a plan .txt file may help (If this extension may be allowed to run on the local file URL as per your preference).';
-			showNotice("JSON to CSV taking a long time loading, or not available on this page. You may need to refresh the page. "+suggestMessage+" Sorry!");
+			showNotice("JSON to CSV taking a long time loading, or not available on this page. You may need to refresh the page.  You may need to enable this extension for local files in the way the browser provides.  "+suggestMessage+" ");
 		}
 	},2500);
     

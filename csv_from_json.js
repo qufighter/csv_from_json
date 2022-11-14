@@ -49,6 +49,7 @@ function doParseObjectMode1(obj, prefix){
 	return result;
 }
 
+var result_flat_error = "JSON to CSV error - result is not flat list of objects (disable flat list mode via options, or enter the appropriate query on the json object in the script text box and try evaluate again... see options for help and more tips!).  This extension is powerful but also provides some simpler features for non-scripters... but is really a playground to learn javascript!"
 
 function getFlatListings(obj){
 	var result = [];
@@ -58,7 +59,7 @@ function getFlatListings(obj){
 	if( typeof obj != 'object' ){
 		console.error("ERROR - not flat list of objects (nor list of arrays)");
 		if( typeof(showNotice) == 'function' ){
-			showNotice("JSON to CSV error - result is not flat list of objects (disable flat list mode)!");
+			showNotice(result_flat_error);
 		}
 	}else if( Array.isArray(obj) && obj.length ){
         
@@ -96,7 +97,7 @@ function getFlatListings(obj){
 	}else{
 		console.error("ERROR2 - not flat list of objects (nor list of arrays)");
 		if( typeof(showNotice) == 'function' ){
-			showNotice("JSON to CSV error - result is not flat list of objects (disable flat list mode)!");
+			showNotice(result_flat_error);
 		}
 	}
 
